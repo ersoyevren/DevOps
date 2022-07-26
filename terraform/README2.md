@@ -209,3 +209,71 @@ aws_instance.tf-example-ec2
 terraform apply -auto-approve
 ```
 
+> ### Notes: 
+> - `terraform refresh` command is deprecated, because its default behavior is unsafe if you have misconfigured credentials for any of your providers. 
+> - It is not recommend using it because it provides no opportunity to review the effects of the operation before updating the state. 
+> - You shouldn't typically need to use this command, because Terraform automatically performs the same refreshing actions as a part of creating a plan in both the `terraform plan` and `terraform apply` commands.
+> - Use `terraform apply -refresh-only` command instead of it.
+
+-  Go to the `main.tf` file and make the changes. We will change the ami id with the Ubuntu instance. Also change the value of EC2 instance tag and name of the S3 bucket.
+
+```go
+resource "aws_instance" "tf-ec2" {
+    # ami           = "ami-0742b4e673072066f"
+    ami           = "ami-042e8287309f5df03"
+    instance_type = "t2.micro" 
+    key_name      = "mk"    #<pem file>
+    tags = {
+      # Name = "tf-ec2"
+      Name = "tf-ec2-ubuntu"
+  }
+}
+
+resource "aws_s3_bucket" "tf-s3" {
+  bucket = "oliver-tf-bucket-addwhateveryouwant-new"
+  #bucket = "oliver-tf-bucket-addwhateveryouwant"
+}
+```
+
+- Run the command `terraform apply` and check the AWS console, the old S3 bucket and EC2 were destroyed and terraform created new ones.
+
+```bash
+terraform apply
+```
+
+- Make the new changes in the `main.tf` file.
+
+```go
+output "tf_example_private_ip" {
+  value = aws_instance.tf-ec2.private_ip
+}
+```
+
+- Run the command `terraform apply -refresh=false`.
+
+```bash
+$ terraform apply -refresh=false
+
+An execution plan has been generated and is shown below.
+Resource actions are indicated with the following symbols:
+
+Terraform will perform the following actions:
+
+Plan: 0 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + tf_example_private_ip = "172.31.22.95"
+
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value: yes
+
+
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+```
+
+```bash
+terraform destroy
+```
