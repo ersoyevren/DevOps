@@ -277,3 +277,175 @@ Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
 ```bash
 terraform destroy
 ```
+
+## Part 2: Variables
+
+- Variables let you customize aspects of Terraform modules without altering the module's own source code. This allows you to share modules across different Terraform configurations, making your module composable and reusable.
+
+- When you declare variables in the root module of your configuration, you can set their values using CLI options and environment variables.
+
+### Declaring and Using  Variables
+
+- Each input variable accepted by a module must be declared using a variable block.
+
+- Make the changes in the `main.tf` file.
+
+```go
+provider "aws" {
+  region  = "us-east-1"
+}
+
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = "4.8.0"
+    }
+  }
+}
+
+variable "ec2_name" {
+  default = "oliver-ec2"
+}
+
+variable "ec2_type" {
+  default = "t2.micro"
+}
+
+variable "ec2_ami" {
+  default = "ami-0742b4e673072066f"
+}
+
+resource "aws_instance" "tf-ec2" {
+  ami           = var.ec2_ami
+  instance_type = var.ec2_type
+  key_name      = "mk"
+  tags = {
+    Name = "${var.ec2_name}-instance"
+  }
+}
+
+variable "s3_bucket_name" {
+  default = "oliver-s3-bucket-variable-addwhateveryouwant"
+}
+
+resource "aws_s3_bucket" "tf-s3" {
+  bucket = var.s3_bucket_name
+}
+
+output "tf-example-public_ip" {
+  value = aws_instance.tf-ec2.public_ip
+}
+
+output "tf_example_private_ip" {
+  value = aws_instance.tf-ec2.private_ip
+}
+
+output "tf-example-s3" {
+  value = aws_s3_bucket.tf-s3[*]
+}
+```
+
+```bash
+terraform apply
+```
+
+- Create a file name `variables.tf`. Take the variables from `main.tf` file and paste into "variables.tf". 
+
+```bash
+terraform validate
+
+terraform fmt
+
+terraform apply
+```
+
+- Go to the `variables.tf` file and comment the s3 bucket name variable's default value.
+
+```go
+variable "s3_bucket_name" {
+#   default     = "oliver-new-s3-bucket-addwhateveryouwant"
+}
+```
+
+```bash
+terraform plan
+```
+
+### Assigning Values to Root Module Variables
+
+- When variables are declared in the root module of your configuration, they can be set in a number of ways:
+
+  - Individually, with the -var command line option.
+  - In variable definitions (.tfvars) files, either specified on the command line or automatically loaded.
+  - As environment variables.
+
+#### -var command line option
+
+- You can define variables with `-var` command
+
+```bash
+terraform plan -var="s3_bucket_name=oliver-new-s3-bucket-2"
+```
+
+#### environment variables
+
+- Terraform searches the environment of its own process for environment variables named `TF_VAR_` followed by the name of a declared variable.
+
+- You can also define variable with environment variables that begin with `TF_VAR_`.
+
+```bash
+export TF_VAR_s3_bucket_name=oliver-env-varible-bucket
+terraform plan
+```
+
+#### In variable definitions (.tfvars)
+
+- Create a file name `terraform.tfvars`. Add the followings.
+
+```go
+s3_bucket_name = "tfvars-bucket"
+```
+
+- Run the command below.
+
+```bash
+terraform plan
+```
+
+- Create a file name `oliver.tfvars`. Add the followings.
+
+```go
+s3_bucket_name = "oliver-tfvar-bucket"
+```
+
+- Run the command below.
+
+```bash
+terraform plan --var-file="oliver.tfvars"
+```
+
+- Create a file named `oliver.auto.tfvars`. Add the followings.
+
+```go
+s3_bucket_name = "oliver-auto-tfvar-bucket"
+```
+
+```bash
+terraform plan
+```
+
+- Terraform loads variables in the following order:
+
+  - Any -var and -var-file options on the command line, in the order they are provided.
+  - Any *.auto.tfvars or *.auto.tfvars.json files, processed in lexical order of their filenames.
+  - The terraform.tfvars.json file, if present.
+  - The terraform.tfvars file, if present.
+  - Environment variables
+
+- Run terraform apply command.
+
+```bash
+terraform apply 
+```
+
