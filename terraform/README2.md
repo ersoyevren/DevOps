@@ -488,3 +488,109 @@ terraform plan
 ```bash
 terraform apply
 ```
+## Part 3: Conditionals and Loops
+
+### count
+
+- By default, a resource block configures one real infrastructure object. However, sometimes you want to manage several similar objects (like a fixed pool of compute instances) without writing a separate block for each one. Terraform has two ways to do this: count and for_each.
+
+- The `count` argument accepts a whole number, and creates that many instances of the resource or module. Each instance has a distinct infrastructure object associated with it, and each is separately created, updated, or destroyed when the configuration is applied.
+
+- Go to the `variables.tf` file and create a new variable.
+
+```go
+variable "num_of_buckets" {
+  default = 2
+}
+```
+
+- Go to the `main.tf` file, make the changes in order.
+
+```go
+resource "aws_s3_bucket" "tf-s3" {
+  bucket = "${var.s3_bucket_name}-${count.index}"
+  count = var.num_of_buckets
+}
+```
+
+- Comment the following output.
+
+```bash
+#  output "tf-example-s3" {
+#   value = aws_s3_bucket.tf-s3[*]
+# }
+```
+
+```bash
+terraform plan
+```
+
+```bash
+terraform apply
+```
+
+- Check the S3 buckets from console.
+
+### Conditional Expressions
+
+- A conditional expression uses the value of a boolean expression to select one of two values.
+
+- Go to the `main.tf` file, make the changes in order.
+
+```go
+resource "aws_s3_bucket" "tf-s3" {
+  bucket = "${var.s3_bucket_name}-${count.index}"
+
+  # count = var.num_of_buckets
+  count = var.num_of_buckets != 0 ? var.num_of_buckets : 3
+}
+```
+
+```bash
+terraform plan
+```
+
+### for_each
+
+- The for_each meta-argument accepts a map or a set of strings, and creates an instance for each item in that map or set. Each instance has a distinct infrastructure object associated with it, and each is separately created, updated, or destroyed when the configuration is applied.
+
+- Go to the `variables.tf` file again and add a new variable.
+
+```go
+variable "users" {
+  default = ["santino", "michael", "fredo"]
+}
+```
+
+- Go to the `main.tf` file make the changes. Change the IAM role and add ``IAMFullAccess`` policy.
+
+```go
+resource "aws_s3_bucket" "tf-s3" {
+  # bucket = "var.s3_bucket_name.${count.index}"
+  # count = var.num_of_buckets
+  # count = var.num_of_buckets != 0 ? var.num_of_buckets : 1
+  for_each = toset(var.users)
+  bucket   = "example-tf-s3-bucket-${each.value}"
+}
+
+resource "aws_iam_user" "new_users" {
+  for_each = toset(var.users)
+  name = each.value
+}
+
+output "uppercase_users" {
+  value = [for user in var.users : upper(user) if length(user) > 6]
+}
+```
+
+```bash
+terraform apply
+```
+
+- Go to the AWS console (IAM and S3) and check the resources.
+
+- Delete all the infrastructure.
+
+```bash
+terraform destroy
+```
