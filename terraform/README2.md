@@ -449,3 +449,42 @@ terraform plan
 terraform apply 
 ```
 
+#### Locals
+
+- A local value assigns a name to an expression, so you can use it multiple times within a module without repeating it.
+
+- Make the changes in the `main.tf` file.
+
+```go
+locals {
+  mytag = "oliver-local-name"
+}
+
+resource "aws_instance" "tf-ec2" {
+  ami           = var.ec2_ami
+  instance_type = var.ec2_type
+  key_name      = "mk"
+  tags = {
+    Name = "${local.mytag}-come from locals"
+  }
+}
+
+resource "aws_s3_bucket" "tf-s3" {
+  bucket = var.s3_bucket_name
+  tags = {
+    Name = "${local.mytag}-come from locals"
+  }
+}
+```
+
+- Run the command `terraform plan`
+
+```bash
+terraform plan
+```
+
+- Run the command `terraform apply` again. Check the EC2 instance's Name tag column.
+
+```bash
+terraform apply
+```
