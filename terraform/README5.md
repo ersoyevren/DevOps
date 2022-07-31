@@ -253,3 +253,75 @@ module "docker_instance" {
 ```
 ---
 
+### Create a Github repository for our terraform module
+
+- Create a `public` github repo and name it as `terraform-aws-docker-instance`.
+
+- Clone the repository to your local.
+
+```bash
+git clone https://github.com/<your-github-account>/terraform-aws-docker-instance.git
+```
+
+- ``Copy`` the module files to this repository folder.
+
+- Next, ``push`` the files to github repo and give a tag to version our module. You should give a semantic version to your module.(https://semver.org/)
+
+```bash
+git add .
+git commit -m "should define your key file"
+git push
+git tag v0.0.1
+git push --tags
+```
+
+- Go to the `Terraform Registry` and sign in with your `Github Account`.
+
+- Next, `Publish` your module.
+
+* Terraform Registry --> Sign in --> Github account --> Publish --> Modules --> Select the module repo in Github (terraform-aws-docker-instance) --> Click Agree in Terms --> Publish Module
+
+- Go to the ``Github Repository``. Define a description in `About` part in github repository. (Click settings wheel)
+
+```yml
+- Description: Terraform module which creates a docker instance resource on AWS.
+
+- Website: https://registry.terraform.io/modules/<account>/docker-instance/aws/latest
+```
+
+### Create an EC2 instance on AWS that installed docker with your public module.
+
+- Create a terraform config file to create an aws instance on AWS.
+
+```bash
+cd && mkdir cw-modules && cd cw-modules && touch main.tf
+```
+
+- Go to the the module page in `Terraform Registry`.
+
+- Copy `Provision Instructions` or `Usage` part. Next, paste it to the `main.tf` and add your `key file` name.
+
+```go
+provider "aws" {
+  region = "us-east-1"
+}
+
+module "docker-instance" {
+  source  = "clarusway/docker-instance/aws"
+  key_name = "clarusway"
+}
+```
+
+- Run terraform file.
+
+```bash
+terraform init
+
+terraform apply --auto-approve
+```
+
+- After checking the instance, you can terminate it.
+
+```bash
+terraform destroy --auto-approve
+```
