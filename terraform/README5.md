@@ -325,3 +325,109 @@ terraform apply --auto-approve
 ```bash
 terraform destroy --auto-approve
 ```
+
+## Part 2 - Terraform Workspaces
+
+### When to use Multiple Workspaces
+
+- Terraform relies on state to associate resources with real-world objects, so if you run the same configuration multiple times with completely separate state data, Terraform can manage many non-overlapping groups of resources. In some cases you'll want to change variable values for these different resource collections (like when specifying differences between staging and production deployments), and in other cases you might just want many instances of a particular infrastructure pattern.
+
+- The simplest way to maintain multiple instances of a configuration with completely separate state data is to use multiple working directories.
+
+- `Workspaces` allow you to use the same working copy of your configuration and the same plugin and module caches, while still keeping separate states for each collection of resources you manage.
+
+- Every initialized working directory has at least one workspace. (If you haven't created other workspaces, it is a workspace named ``default``.)
+
+- For a given working directory, only one workspace can be selected at a time.
+
+- A common use for multiple workspaces is to create a parallel, distinct copy of a set of infrastructure in order to test a set of changes before modifying the main production infrastructure. For example, a developer working on a complex set of infrastructure changes might create a new temporary workspace in order to freely experiment with changes without affecting the default workspace.
+
+### Using Workspaces
+
+- Create a directory name `workspaces` to learn terraform workspaces. Next create terraform config file name `workspace.tf`.
+
+```bash
+cd && mkdir workspaces && cd workspaces && touch workspace.tf
+```
+
+- Add the followings.
+
+```go
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "tfmyec2" {
+  ami = lookup(var.myami, terraform.workspace)
+  instance_type = "${terraform.workspace == "dev" ? "t3a.medium" : "t2.micro"}"
+  count = "${terraform.workspace == "prod" ? 3 : 1}"
+  key_name = "<your-pem-file>"
+  tags = {
+    Name = "${terraform.workspace}-server"
+  }
+}
+
+variable "myami" {
+  type = map(string)
+  default = {
+    default = "ami-0cff7528ff583bf9a"
+    dev     = "ami-06640050dc3f556bb"
+    prod    = "ami-08d4ac5b634553e16"
+  }
+  description = "in order of aAmazon Linux 2 ami, Red Hat Enterprise Linux 8 ami and Ubuntu Server 20.04 LTS amis"
+}
+```
+
+- Workspaces are managed with the ``terraform workspace`` set of commands. We can see the command options with `--help` flag.
+
+```bash
+terraform workspace --help
+terraform workspace list
+terraform workspace show
+```
+
+- Create two workspaces with names `dev` and `prod`.
+
+```bash
+terraform workspace new dev
+terraform workspace new prod
+terraform workspace list
+terraform workspace show
+terraform workspace select dev
+```
+
+- After creating namespaces, terraform creates new folders for new workspaces. Check the `workspace` folder and see the new folders.(`terraform.tfstate.d`)
+
+- Run the following terraform commands to create instances in `dev` and `default` workspaces.
+
+```bash
+terraform init
+terraform plan
+
+terraform workspace select prod
+terraform workspace show
+terraform plan
+# check the plan's "instance_type", "ami", "number of instances" and "tag" parts.
+
+terraform workspace select dev
+terraform workspace show
+terraform apply --auto-approve
+# check "./workspaces/terraform.tfstate.d/dev" folder. Terraform was created "terraform.tfstate" file in that folder. 
+terraform destroy --auto-approve
+
+terraform workspace select default
+terraform workspace show
+terraform apply --auto-approve
+# Terraform was created "terraform.tfstate" file in root folder for the "default" workspace.
+terraform destroy --auto-approve
+```
+
+- ``Delete`` the workspaces.
+
+```bash
+terraform workspace list
+terraform workspace show
+terraform workspace delete prod
+terraform workspace delete dev
+# terraform deletes workspaces and their folders included their "state" files. 
+```
