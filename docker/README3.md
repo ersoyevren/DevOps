@@ -201,3 +201,101 @@ docker ps -a
 ```bash
 sudo ls -al  /var/lib/docker/volumes/cw-vol/_data && sudo cat /var/lib/docker/volumes/cw-vol/_data/i-will-persist.txt
 ```
+## Part 4 - Using Same Volume with Different Containers
+
+- Run a `alpine` container with interactive shell open, name the container as `clarus2nd`, attach the volume `cw-vol` to `/cw2nd` mount point in the container, and add command to run alpine shell.
+
+```bash
+docker run -it --name clarus2nd -v cw-vol:/cw2nd alpine ash
+```
+
+- List the files in `/cw2nd` folder, and show that we can reach the file `i-will-persist.txt`.
+
+```bash
+ls -l /cw2nd && cat /cw2nd/i-will-persist.txt
+```
+
+- Create an another file in `clarus2nd` container under `/cw2nd` folder.
+
+```bash
+cd cw2nd && echo "This is a file of the container Clarus2nd" > loadmore.txt
+```
+
+- List the files in `/cw2nd` folder, and show content of `loadmore.txt`.
+
+```bash
+ls && cat loadmore.txt
+```
+
+- Exit the `clarus2nd` container and return to ec2-user bash shell.
+
+```bash
+exit
+```
+
+- Run a `ubuntu` container with interactive shell open, name the container as `clarus3rd`, attach the volume `cw-vol` to `/cw3rd` mount point in the container, and add command to run bash shell.
+
+```bash
+docker run -it --name clarus3rd -v cw-vol:/cw3rd ubuntu bash
+```
+
+- List the files in `/cw3rd` folder, and show that we can reach the all files created earlier.
+
+```bash
+ls -l /cw3rd
+```
+
+- Create an another file in `clarus3rd` container under `/cw3rd` folder.
+
+```bash
+cd cw3rd && touch file-from-3rd.txt && ls
+```
+
+- Exit the `clarus3rd` container and return to ec2-user bash shell.
+
+```bash
+exit
+```
+
+- Run an another `ubuntu` container with interactive shell open, name the container as `clarus4th`, attach the volume `cw-vol` as read-only to `/cw4th` mount point in the container, and add command to run bash shell.
+
+```bash
+docker run -it --name clarus4th -v cw-vol:/cw4th:ro ubuntu bash
+```
+
+- List the files in `/cw4th` folder, and show that we can reach the all files created earlier.
+
+```bash
+ls -l /cw4th
+```
+
+- Try to create an another file under `/cw4th` folder. Should see error `read-only file system`
+
+```bash
+cd cw4th && touch file-from-4th.txt
+```
+
+- Exit the `clarus4th` container and return to ec2-user bash shell.
+
+```bash
+exit
+```
+
+- List all containers.
+
+```bash
+docker ps -a
+```
+
+- Delete `clarus2nd`, `clarus3rd` and `clarus4th` containers.
+
+```bash
+docker rm clarus2nd clarus3rd clarus4th
+```
+
+- Delete `cw-vol` volume.
+
+```bash
+docker volume rm cw-vol
+```
+
