@@ -444,3 +444,85 @@ docker volume prune
 docker volume ls
 docker container ls
 ```
+## Part 6 - Bind Mounts #genellikle test envirenment a kullaniliyor.
+
+- Run the `nginx` container at the detached mod, name the container as `nginx-default`, and open <public-ip> on browser and show the nginx default page.
+
+```bash
+docker run -d --name nginx-default -p 80:80  nginx 
+## -d ile containera baglanmayip ec2 kaliyorum arka tarafta container calisiyor bu sekilde terminali kullanabiliyorum.
+```
+
+
+- Add a security rule for protocol HTTP port 80 and show Nginx Web Server is running on Docker Machine.
+
+```text
+http://<public-ip>:80
+```
+
+- Attach the `nginx` container, show the index.html in the /usr/share/nginx/html directory.
+
+```bash
+docker exec -it nginx-default bash
+root@4a1c7e5f394a:/# cd /usr/share/nginx/html
+root@4a1c7e5f394a:/usr/share/nginx/html# ls
+50x.html  index.html
+root@4a1c7e5f394a:/usr/share/nginx/html# cat index.html
+```
+```bash
+## exec komutu containerdan ciksakta arka planda calistirmaya devam ediyor. run ise exit yapinca tekrar start dememiz gerekiyor.
+```
+- `exit` the container
+
+- Create a folder named  webpage, and an index.html file.
+
+```bash
+mkdir webpage && cd webpage
+echo "<h1>Welcome to Clarusway</h1>" > index.html
+```
+
+- Run the `nginx` container at the detached mod, name the container as `nginx-new`, attach the directory `/home/ec2-user/webpage` to `/usr/share/nginx/html` mount point in the container, and open <public-ip> on browser and show the web page.
+
+```bash
+docker run -d --name nginx-new -p 8080:80 -v /home/ec2-user/webpage:/usr/share/nginx/html nginx
+```
+
+- Add a security rule for protocol HTTP port 8080 and show Nginx Web Server is running on Docker Machine.
+
+```text
+http://<public-ip>:8080
+```
+
+- Attach the `nginx` container, show the index.html in the /usr/share/nginx/html directory.
+
+```bash
+docker exec -it nginx-new bash
+root@a7e3d276a147:/# cd usr/share/nginx/html
+root@a7e3d276a147:/usr/share/nginx/html# ls 
+index.html
+root@a7e3d276a147:/usr/share/nginx/html# cat index.html 
+<h1>Welcome to Clarusway</h1>
+```
+
+- `exit` the container.
+
+- Add `<h2>This is added for docker volume lesson</h2>` line to index.html in the /home/ec2-user/webpage folder and check the web page on browser.
+
+```bash
+cd /home/ec2-user/webpage
+echo "<h2>This is added for docker volume lesson</h2>" >> index.html
+```
+
+- Remove the containers.
+
+```bash
+docker rm -f nginx-default nginx-new
+```
+
+- Remove the volumes.
+
+```bash
+ docker volume prune -f
+```
+
+ 
