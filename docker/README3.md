@@ -51,21 +51,21 @@ ssh -i .ssh/call-training.pem ec2-user@ec2-3-133-106-98.us-east-2.compute.amazon
 - Check if the docker service is up and running.
 
 ```bash
-systemctl status docker
+systemctl status docker #dockerin aktif oldugunu gosteriyor.
 ```
 
 - Run an `alpine` container with interactive shell open, and add command to run alpine shell. Here, explain explain what the alpine container is and why it is so popular. (Small size, Secure, Simple, Fast boot)
 
 ```bash
-docker run -it alpine ash
+docker run -it alpine ash #-it komutuyla container olusturulup icine giriliyor. alpine terminalde ash kullaniyor.
 ```
+## newgrep docker komutu sudo kullanmaktan kurtariyor.
 
 - Display the os release of the alpine container.
 
 ```bash
-cat /etc/os-release
+cat /etc/os-release ## isletim sisteminin ayrintilarini gosteriyor.
 ```
-
 - Create a file named `short-life.txt` under `/home` folder
 
 ```bash
@@ -298,4 +298,149 @@ docker rm clarus2nd clarus3rd clarus4th
 ```bash
 docker volume rm cw-vol
 ```
+## Part 5 - docker volume behaviours
 
+|No | Situation   | Behaviour |
+| ---- | ----------- | ------------ |
+| 1    | If there is no target directory. | The target directory is created and files inside volume are copied to this directory. |
+| 2    | If there is target directory, but it is empty. | The files in volume are copied to target directory.  |
+| 3    | If there is target directory and it is not empty, but volume is empty. | The files in the target directory are copied to volumes. |
+| 4    | If the volume is not empty. | There will be just the files inside the volume regardless of the target directory is full or empty. |
+
+- Create `empty-vol` and `full-vol` volumes.
+
+```bash
+docker volume create empty-vol
+docker volume create full-vol
+```
+
+- Run an `alpine` container with interactive shell open, name the container as `vol-lesson`, attach the volume `full-vol` to `/cw` mount point in the container, and add command to run alpine shell. 
+
+```bash
+docker run -it --name vol-lesson -v full-vol:/cw alpine ash
+```
+
+- Create a file in `full-vol` container under `/cw` folder.
+
+```bash
+cd cw && echo "This file is created in the full-vol volume" > full.txt
+```
+
+- Exit the `vol-lesson` container and return to ec2-user bash shell.
+
+```bash
+exit
+```
+
+- List all files/folders under the volume `full-vol`, show that the file `full.txt` is there.
+
+```bash
+sudo ls /var/lib/docker/volumes/full-vol/_data
+```
+
+- Run the `clarusway/hello-clarus` container with interactive shell open, name the container as `clarus`, and show the inside of `hello-clarus` directory.
+
+```bash
+docker run -it --name clarus clarusway/hello-clarus sh
+/ # ls
+bin           etc           home          media         opt           root          sbin          sys           usr
+dev           hello-clarus  lib           mnt           proc          run           srv           tmp           var
+/ # cd hello-clarus && ls
+app.py
+```
+
+- `exit` the container
+
+### Situation-1 and 2:
+
+|No | Situation   | Behaviour |
+| ---- | ----------- | ------------ |
+| 1    | If there is no target directory. | The target directory is created and files inside volume are copied to this directory. |
+| 2    | If there is target directory, but it is empty. | The files in volume are copied to target directory.  |
+
+![situation 1 and 2](situation-1-and-2.png)
+
+- Run the `clarusways/hello-clarus` container with interactive shell open, name the container as `try1`, attach the volume `full-vol` to `/cw` mount point in the container, and show that `/cw` directory is created and files inside volume are copied to this directory.
+
+```bash
+docker run -it --name try1 -v full-vol:/cw clarusway/hello-clarus sh
+/ # ls
+bin           dev           hello-clarus  lib           mnt           proc          run           srv           tmp           var
+cw            etc           home          media         opt           root          sbin          sys           usr
+/ # cd cw && ls
+full.txt
+```
+
+- `exit` the container
+
+
+### Situation-3:
+
+|No| Situation   | Behaviour |
+| ---- | ----------- | ------------ |
+| 3    | If there is target directory and it is not empty, but volume is empty. | The files in the target directory are copied to volumes. |
+
+![situation 3](situation-3.png)
+
+- List all files/folders under the volume `empty-vol`, show that the folder `is empty.
+
+```bash
+sudo ls /var/lib/docker/volumes/empty-vol/_data
+```
+
+- Run the `clarusway/hello-clarus` container with interactive shell open, name the container as `try2`, attach the volume `empty-vol` to `/hello-clarus` mount point in the container.
+
+```bash
+docker run -it --name try2 -v empty-vol:/hello-clarus clarusway/hello-clarus sh
+/ # ls
+bin           etc           home          media         opt           root          sbin          sys           usr
+dev           hello-clarus  lib           mnt           proc          run           srv           tmp           var
+/ # cd hello-clarus/ && ls
+app.py
+```
+
+- `exit` the container.
+
+- List all files/folders under the volume `empty-vol`, show that the file `app.py` is there.
+
+```bash
+sudo ls /var/lib/docker/volumes/empty-vol/_data
+app.py
+```
+
+### Situation-4:
+
+|No    | Situation   | Behaviour |
+| ---- | ----------- | ------------ |
+| 4    | If the volume is not empty. | There will be just the files inside the volume regardless of the target directory is full or empty. |
+
+![situation 4](situation-4.png)
+
+- List all files/folders under the volume `full-vol`, show that the file `full.txt` is there.
+
+```bash
+sudo ls /var/lib/docker/volumes/full-vol/_data
+full.txt
+```
+
+- Run the `clarusway/hello-clarus` container with interactive shell open, name the container as `try3`, attach the volume `full-vol` to `/hello-clarus` mount point in the container, and show that we just see the files inside volume regardless of  the target directory is full or empty.
+
+```bash
+docker run -it --name try3 -v full-vol:/hello-clarus clarusway/hello-clarus sh
+/ # ls
+bin           etc           home          media         opt           root          sbin          sys           usr
+dev           hello-clarus  lib           mnt           proc          run           srv           tmp           var
+/ # cd hello-clarus/ && ls
+full.txt
+```
+
+- `exit` the container
+
+- Remove all volumes and containers and list them.
+
+```bash
+docker container prune
+docker volume prune
+docker volume ls
+docker container ls
+```
