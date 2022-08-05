@@ -444,7 +444,10 @@ docker volume prune
 docker volume ls
 docker container ls
 ```
-## Part 6 - Bind Mounts #genellikle test envirenment a kullaniliyor.
+## Part 6 - Bind Mounts 
+```bash
+#genellikle test envirenment a kullaniliyor.
+```
 
 - Run the `nginx` container at the detached mod, name the container as `nginx-default`, and open <public-ip> on browser and show the nginx default page.
 
