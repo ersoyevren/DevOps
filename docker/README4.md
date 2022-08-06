@@ -236,3 +236,84 @@ docker container rm clarus1st clarus2nd clarus3rd clarus4th
 ```bash
 docker network rm clarusnet
 ```
+## Part 4 - Container Networking
+
+- Run a `nginx` web server, name the container as `ng`, and bind the web server to host port 8080 command to run alpine shell. Explain `--rm` and `-p` flags and port binding.
+
+```bash
+docker container run --rm -d -p 8080:80 --name ng nginx
+```
+```bash
+#-rm ile container dan cikinca otomatik siliyor.
+```
+
+- Add a security rule for protocol HTTP port 8080 and show Nginx Web Server is running on Docker Machine.
+
+```text
+http://ec2-18-232-70-124.compute-1.amazonaws.com:8080
+```
+
+- Stop container `ng`, should be removed automatically due to `--rm` flag.
+
+```bash
+docker container stop ng
+```
+
+- Run a `nginx` web server, name the container as `my_nginx`, and connect the web server to host network.
+
+```bash
+docker container run --rm -dit --network host --name my_nginx nginx
+```
+
+- Show Nginx Web Server is running on Docker Machine.
+
+```text
+http://ec2-18-232-70-124.compute-1.amazonaws.com
+```
+
+- Show the details of network interface configuration of `my_nginx` container.
+
+```bash
+docker container exec -it my_nginx sh
+apt-get update
+apt-get install net-tools
+ifconfig  # ne ise yariyor.
+```
+
+- Open an other terminal and connect your ec2 instance. Show the details of network interface configuration of ec2 instance.
+
+```bash
+ifconfig
+```
+
+- Show that two configurations are the same.
+
+- Exit and stop container `my_nginx`, should be removed automatically due to `--rm` flag.
+
+```bash
+docker container stop my_nginx
+```
+
+- Run an `alpine` container, name the container as `nullcontainer`, and connect the web server to none network.
+
+```bash
+docker container run --rm -it --network none --name nullcontainer alpine
+```
+
+- Show the details of network interface configuration of `nullcontainer` container.
+
+```bash
+ifconfig
+```
+
+- Notice that it has only loopback(localhost) interface.
+
+- Try to ping `google.com`, should face with bad address. Explain why failed (due to none network configuration)
+
+```bash
+ping -c 4 google.com
+```
+
+- Exit from container `nullcontainer`, should be removed automatically due to `--rm` flag.
+
+docker container image rmi a d #buradaki rmi ne anlama geliyor.   
