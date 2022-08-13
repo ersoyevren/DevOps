@@ -270,3 +270,106 @@ kubectl get nodes
 ```bash
 kubectl get nodes -o wide
 ```
+## Part 4 - Deploying a Simple Nginx Server on Kubernetes
+
+- Check the readiness of nodes at the cluster on master node.
+
+```bash
+kubectl get nodes
+```
+
+- Show the list of existing pods in default namespace on master. Since we haven't created any pods, list should be empty.
+
+```bash
+kubectl get pods
+```
+
+- Get the details of pods in all namespaces on master. Note that pods of Kubernetes service are running on the master node and also additional pods are running on the worker nodes to provide communication and management for Kubernetes service.
+
+```bash
+kubectl get pods -o wide --all-namespaces
+```
+
+- Create and run a simple `Nginx` Server image.
+
+```bash
+kubectl run nginx-server --image=nginx  --port=80
+```
+
+- Get the list of pods in default namespace on master and check the status and readyness of `nginx-server`
+
+```bash
+kubectl get pods -o wide
+```
+
+- Expose the nginx-server pod as a new Kubernetes service on master.
+
+```bash
+kubectl expose pod nginx-server --port=80 --type=NodePort
+```
+
+- Get the list of services and show the newly created service of `nginx-server`
+
+```bash
+kubectl get service -o wide
+```
+
+- You will get an output like this.
+
+```text
+kubernetes     ClusterIP   10.96.0.1       <none>        443/TCP        13m    <none>
+nginx-server   NodePort    10.110.144.60   <none>        80:32276/TCP   113s   run=nginx-server
+```
+
+- Open a browser and check the `public ip:<NodePort>` of worker node to see Nginx Server is running. In this example, NodePort is 32276.
+
+- Clean the service and pod from the cluster.
+
+```bash
+kubectl delete service nginx-server
+kubectl delete pods nginx-server
+```
+
+- Check there is no pod left in default namespace.
+
+```bash
+kubectl get pods
+```
+
+- To delete a worker/slave node from the cluster, follow the below steps.
+
+  - Drain and delete worker node on the master.
+
+  ```bash
+  kubectl get nodes
+  kubectl cordon kube-worker-1
+  kubectl drain kube-worker-1 --ignore-daemonsets --delete-emptydir-data
+
+  kubectl delete node kube-worker-1
+  ```
+
+  - Remove and reset settings on the worker node.
+
+  ```bash
+  sudo kubeadm reset
+  ```
+  
+> Note: If you try to have worker rejoin cluster, it might be necessary to clean `kubelet.conf` and `ca.crt` files and free the port `10250`, before rejoining.
+>
+> ```bash
+>  sudo rm /etc/kubernetes/kubelet.conf
+>  sudo rm /etc/kubernetes/pki/ca.crt
+>  sudo netstat -lnp | grep 10250
+>  sudo kill <process-id>
+>  ```
+
+
+# References
+
+- https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+
+- https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+- https://kubernetes.io/docs/reference/
+
+- https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#-strong-getting-started-strong-
