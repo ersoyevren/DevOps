@@ -1,4 +1,4 @@
-# ⛵ Nedir, Components, Nodes
+[# ⛵ Nedir, Components, Nodes](https://github.com/aytitech/k8sfundamentals)
 
 # 2. Neden Kubernetes öğrenmeniz gerekiyor?
 ## Neden Gerekli?
@@ -545,7 +545,7 @@ kubectl edit pods <podName>
 * Pod’un editlendiği mesajını görürüz.
 * Tercih edilen bir yöntem değildir, YAML + `kubectl apply` tercih edilmelidir.
 
-## Pod Yaşam Döngüsü
+## 28. Pod Yaşam Döngüsü
 
 * **Pending** –> Pod oluşturmak için bir YAML dosyası yazdığımızda, YAML dosyasında yazan configlerle varsayılanlar harmanlanır ve etcd’ye kaydolur.
 * **Creating** –> kube-sched, etcd’yi sürekli izler ve herhangi bir node’a atanmamış pod görülürse devreye girer ve en uygun node’u seçer ve node bilgisini ekler. Eğer bu aşamada takılı kalıyorsa, **uygun bir node bulunamadığı anlamına gelir.**
@@ -564,13 +564,23 @@ kubectl edit pods <podName>
 * Container uygulamasının durmasına karşılık, Pod içerisinde bir **RestartPolicy** tanımlanır ve 3 değer alır:
   * **`Always`** -> Kubelet bu container’ı yeniden başlatır.
   * **`Never`** -> Kubelet bu container’ı yeniden **başlatmaz**.
-  * **`On-failure`** -> Kubelet sadece container hata alınca başlatır.\\
+  * **`On-failure`** -> Kubelet sadece container hata alınca başlatır.\
 * **Succeeded** -> Pod başarıyla oluşturulmuşsa bu duruma geçer.
 * **Failed** -> Pod başarıyla oluşturulmamışsa bu duruma geçer.
 * **Completed** -> Pod başarıyla oluşturulup, çalıştırılır ve hatasız kapanırsa bu duruma geçer.
 * :warning: **CrashLookBackOff** -> Pod oluşturulup sık sık kapanıyorsa ve RestartPolicy’den dolayı sürekli yeniden başlatılmaya çalışılıyorsa, k8s bunu algılar ve bu podu bu state’e getirir. Bu state de olan **podlar incelenmelidir.**
 
-## Multi Container Pods
+# 29. Pod yaşam döngüsü uygulama
+
+**kubectl get pods -w**
+canli olarak degisimi izliyoruz.
+
+![image](https://user-images.githubusercontent.com/103413194/184527496-98829e3e-888f-40b3-a775-a7746c89c413.png)
+
+
+-c komutu ile 
+
+# 30. Çoklu container pod
 
 ### **Neden 2 uygulamayı aynı container’a koymuyoruz?**
 
@@ -590,7 +600,11 @@ kubectl edit pods <podName>
 kubectl exec -it <podName> -c <containerName> -- /bin/sh
 ```
 
+# 31. Çoklu container pod uygulama
+
 > _k8sfundamentals/podmulticontainer.yaml dosyası örneğine bakabilirsiniz._
+
+# 32. Init container
 
 ### Init Container ile bir Pod içerisinde birden fazla Container Çalıştırma
 
@@ -599,5 +613,501 @@ Go’daki `init()` komutu gibi ilk çalışan container’dır. Örneğin, uygul
 1. Uygulama container’ı başlatılmadan önce **Init Container** ilk olarak çalışır.
 2. Init Container yapması gerekenleri yapar ve kapanır.
 3. Uygulama container’ı, Init Container kapandıktan sonra çalışmaya başlar. **Init Container kapanmadan uygulama container’ı başlamaz.**
+**Ornek**: Uygulama containerin ihtiyacı olan bazı config dosyalarının son güncel halinin uygulama başlamadan sisteme çekilmesi gerekiyor. Bu durumda ilk önce init container ile çekme işini halledip daha sonra ana uygulama başlar.
+
+![image](https://user-images.githubusercontent.com/103413194/184529084-bcc4ac7f-a223-4510-ae88-489e41a13af8.png)
 
 > _k8sfundamentals/podinitcontainer.yaml dosyası örneğine bakabilirsiniz._
+
+# 33. Label ve selector
+
+## 🏷 Label, Selector, Annotation
+
+## Label Nedir?
+
+* Label -> Etiket
+* Selector -> Etiket Seçme
+
+ÖR: `example.com/tier:front-end` –>`example.com/` = Prefix (optional) `tier` = **key**, `front-end` = **value**
+
+* `kubernetes.io/`ve `k8s.io/` Kubernetes core bileşenler için ayrılmıştır, kullanılamazdır.
+* Tire, alt çizgi, noktalar içerebilir.
+* Türkçe karakter kullanılamaz.
+* **Service, deployment, pods gibi objectler arası bağ kurmak için kullanılır.**
+
+# 34. Label ve selector uygulama
+
+* Label tanımı **metadata** tarafında yapılır. Aynı object’e birden fazla label ekleyebiliriz. bir poddaki anahtara iki value atayamayız.
+* Label, gruplandırma ve tanımlama imkanı verir. CLI tarafında listelemekte kolaylaşır.
+
+### Selector - Label’lara göre Object Listelemek
+
+* İçerisinde örneğin “app” key’ine sahip objectleri listelemek için:
+
+```yaml
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod8
+  labels:
+    app: berk # app key burada. berk ise value'su.
+    tier: backend # tier başka bir key, backend value'su.
+...
+
+![image](https://user-images.githubusercontent.com/103413194/184532721-92694678-8432-4a93-9c87-2947a57f9b36.png)
+
+labels ları kullanarak arama yapabiliyoruz.
+---
+obje oluştururken yamlın içinde obje yamlarının arasında --- koyarsak yeni bir obje oluşturabiliriz.
+```
+
+![image](https://user-images.githubusercontent.com/103413194/184532768-38c3193e-f8bb-4596-a6db-22dad5388287.png)
+
+
+
+![image](https://user-images.githubusercontent.com/103413194/184532830-49eb35f0-1a38-41b1-83df-daa6592d2fe4.png)
+
+
+```shell
+kubectl get pods -l <keyword> --show-labels
+
+## Equality based Syntax'i ile listeleme
+
+kubectl get pods -l "app" --show-labels
+
+kubectl get pods -l "app=firstapp" --show-labels
+
+kubectl get pods -l "app=firstapp, tier=front-end" --show-labels
+
+# app key'i firstapp olan, tier'ı front-end olmayanlar:
+kubectl get pods -l "app=firstapp, tier!=front-end" --show-labels
+
+# app anahtarı olan ve tier'ı front-end olan objectler:
+kubectl get pods -l "app, tier=front-end" --show-labels
+
+## Set based ile Listeleme
+
+# App'i firstapp olan objectler:
+kubectl get pods -l "app in (firstapp)" --show-labels
+
+# app'i sorgula ve içerisinde "firstapp" olmayanları getir:
+kubectl get pods -l "app, app notin (firstapp)" --show-labels
+
+kubectl get pods -l "app in (firstapp, secondapp)" --show-labels
+
+# app anahtarına sahip olmayanları listele
+kubectl get pods -l "!app" --show-labels
+
+# app olarak firstapp atanmış, tier keyine frontend değeri atanmamışları getir:
+kubectl get pods -l "app in (firstapp), tier notin (frontend)" --show-labels
+```
+
+* İlk syntax’ta (equality based) bir sonuç bulunamazken, 2. syntax (set based selector) sonuç gelir:
+
+```yaml
+kubectl get pods -l "app=firstapp, app=secondapp" --show-labels # Sonuç yok!
+kubectl get pods -l "app in (firstapp, secondapp)" --show-labels # Sonuç var :)
+```
+
+### Komutla label ekleme
+
+```shell
+kubectl label pods <podName> <label>
+
+kubectl label pods pod1 app=front-end
+```
+
+### Komutla label silme
+
+Sonuna - (tire) koymak gerekiyor. Sil anlamına gelir.
+
+```
+kubectl label pods pod1 app-
+```
+
+### Komutla label güncelleme
+
+```shell
+kubectl label --overwrite pods <podName> <label>
+
+kubectl label --overwrite pods pod9 team=team3
+```
+
+### Komutla toplu label ekleme
+
+Tüm objectlere bu label eklenir.
+
+```
+kubectl label pods --all foo=bar
+```
+
+## Objectler Arasında Label İlişkisi
+
+* NŞA’da kube-sched kendi algoritmasına göre bir node seçimi yapar. Eğer bunu manuel hale getirmek istersek, aşağıdaki örnekte olduğu gibi `hddtype: ssd` label’ına sahip node’u seçmesini sağlayabiliriz. Böylece, pod ile node arasında label’lar aracılığıyla bir ilişki kurmuş oluruz.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod11
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 80
+  nodeSelector:
+    hddtype: ssd
+```
+
+> _minikube cluster’ı içerisindeki tek node’a `hddtype: ssd` label’ı ekleyebiliriz. Bunu ekledikten sonra yukarıdaki pod “Pending” durumundan, “Running” durumuna geçecektir. (Aradığı node’u buldu çünkü_ :smile: _)_
+
+```shell
+kubectl label nodes minikube hddtype=ssd
+```
+
+# 35. Annotation
+
+* Aynı label gibi davranır ve **metadata** altına yazılır.
+* Label’lar 2 object arasında ilişki kurmak için kullanıldığından hassas bilgi sınıfına girer. (Label'lar bir durumu tetikleyebilir). Bu sebeple, label olarak kullanamayacağımız ama önemli bilgileri **Annotation** sayesinde kayıt altına alabiliriz.
+* **example.com/notification-email:admin@k8s.com**
+  * example.com –> Prefix (optional)
+  * notification-email –> Key
+  * admin@k8s.com –> Value
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: annotationpod
+  annotations:
+    owner: "Ozgur OZTURK"
+    notification-email: "admin@k8sfundamentals.com"
+    releasedate: "01.01.2021"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  containers:
+  - name: annotationcontainer
+    image: nginx
+    ports:
+    - containerPort: 80
+```
+
+### Komutla Annotation ekleme
+
+```shell
+kubectl annotate pods annotationpod foo=bar
+
+kubectl annotate pods annotationpod foo- # Siler.
+```
+# Namespace
+
+* 10 farklı ekibin tek bir **file server** kullandığı bir senaryo düşünelim:
+  * Bir kişinin yarattığı bir dosyayı başkası overwrite edebilir ya da isim çakışmasına sebep olabilir,
+  * Sadece Team 1’in görmesi gereken dosyaları ayırmakta zorlanabilirim, sürekli dosya ayarları yapmam gerekir.
+  * Bunun çözümü için, her ekibe özel bir klasör yaratabilir ve permissionlarını ekip üyelerine göre düzenleyebiliriz.
+* Yukarıdaki örnekteki **fileserver**’ı **k8s clusterı**, **namespace’leri** ise burada her ekibe açılmış **klasörler** olarak düşünebiliriz.
+* **Namespace’lerde birer k8s object’idir. Tanımlarken (özellikle YAML) dosyasında buna göre tanımlama yapılmalıdır.**
+* Namespace’lerin birbirinden bağımsız ve benzersiz olması gerekir. **Namespace’ler birbiri içerisine yerleştirilemez.**
+* Her k8s oluşturulduğunda ise 4 default namespace oluşturulur. (_default, kube-node-lease, kube-public, kube-system_)
+
+### Namespace Listeleme
+
+* Varsayılan olarak tüm işlemler ve objectler **default namespace** altında işlenir. `kubectl get pods`yazdığımızda herhangi bir namespace belirtmediğimiz için, `default namespace` altındaki podları getirir.
+
+```shell
+kubectl get pods --namespace <namespaceName>
+kubectl get pods -n <namespaceName>
+
+# Tüm namespace'lerdeki podları listelemek için:
+kubectl get pods --all-namespaces
+```
+
+### Namespace Oluşturma
+
+```shell
+kubectl create namespace <namespaceName>
+
+kubectl get namespaces
+```
+
+#### YAML dosyası kullanarak Namespace oluşturma
+
+```yaml
+apiVersion: v1
+kind: Namespace # development isminde bir namespace oluşturulur.
+metadata:
+  name: development # namespace'e isim veriyoruz.
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: development # oluşturduğumuz namespace altında podu tanımlıyoruz.
+  name: namespacepod
+spec:
+  containers:
+  - name: namespacecontainer
+    image: nginx:latest
+    ports:
+    - containerPort: 80
+```
+
+Bir namespace içinde çalışan Pod’u yaratırken ve bu poda bağlanırken; kısacası bu podlar üzerinde herhangi bir işlem yaparken **namespace** belirtilmek zorundadır. Belirtilmezse, k8s ilgili podu **default namespace** altında aramaya başlayacaktır.
+
+### Varsayılan Namespace’i Değiştirmek
+
+```
+kubectl config set-context --current --namespace=<namespaceName>
+```
+
+### Namespace’i Silmek
+
+:warning: **DİKKAT!** **Namespace silerken confirmation istenmeyecektir. Namespace altındaki tüm objectlerde silinecektir!**
+
+```
+kubectl delete namespaces <namespaceName>
+```
+
+# 37. Deployment
+
+K8s kültüründe “Singleton (Tekil) Pod”lar genellikle yaratılmaz. Bunları yöneten üst seviye object’ler yaratırız ve bu podlar bu objectler tarafından yönetilir. (ÖR: Deployment)
+
+**Peki, neden yaratmıyoruz?**
+
+Örneğin, bir frontend object’ini bir pod içerisindeki container’la deploy ettiğimizi düşünelim. Eğer bu container’da hata meydana gelirse ve bizim RestartPolicy’miz “Always veya On-failure” ise kube-sched containerı yeniden başlatarak kurtarır ve çalışmasına devam ettirir. Fakat, **sorun node üzerinde çıkarsa, kube-sched, “Ben bunu gidip başka bir worker-node’da çalıştırayım” demez!**
+
+Peki buna çözüm olarak 3 node tanımladık, önlerine de bir load balancer koyduk. Eğer birine bir şey olursa diğerleri online olmaya devam edeceği için sorunu çözmüş olduk. **AMA..** Uygulamayı geliştirdiğimizi düşünelim. Tek tek tüm nodelardaki container image’larını yenilemek zorunda kalacağız. Label eklemek istesek, hepsine eklememiz gerekir. **Yani, işler karmaşıklaştı.**
+
+**ÇÖZÜM: “Deployment” Object**
+
+* Deployment, bir veya birden fazla pod’u için bizim belirlediğimiz **desired state**’i sürekli **current state**‘e getirmeye çalışan bir object tipidir. Deployment’lar içerisindeki **deployment-controller** ile current state’i desired state’e getirmek için gerekli aksiyonları alır.
+* Deployment object’i ile örneğin yukarıdaki image update etme işlemini tüm nodelarda kolaylıkla yapabiliriz.
+* Deployment’a işlemler sırasında nasıl davranması gerektiğini de (**Rollout**) parametre ile belirtebiliriz.
+* **Deployment’ta yapılan yeni işlemlerde hata alırsak, bunu eski haline tek bir komutla döndürebiliriz.**
+* :warning: :warning: :warning: Örneğin, deployment oluştururken **replica** tanımı yaparsak, k8s cluster’ı her zaman o kadar replika’yı canlı tutmaya çalışacaktır. Siz manuel olarak deployment’ın oluşturduğu pod’lardan birini silseniz de, arka tarafta yeni bir pod ayağa kaldırılacaktır. İşte bu sebeple biz **Singleton Pod** yaratmıyoruz. Yani, manuel ya da yaml ile direkt pod yaratmıyoruz ki bu optimizasyonu k8s’e bırakıyoruz.
+* Tek bir pod yaratacak bile olsanız, bunu deployment ile yaratmalısınız! (k8s resmi önerisi)
+
+# 38. Deployment uygulama
+### Komut ile Deployment Oluşturma
+
+```shell
+kubectl create deployment <deploymentName> --image=<imageName> --replicas=<replicasNumber>
+
+kubectl create deployment <deploymentName> --image=nginx:latest --replicas=2
+
+kubectl get deployment
+# Tüm deployment ready kolonuna dikkat!
+```
+
+### Deployment’taki image’ı Update etme
+
+```shell
+kubectl set image deployment/<deploymentName> <containerName>=<yeniImage>
+
+kubectl set image deployment/firstdeployment nginx=httpd
+```
+
+* Default strateji olarak, önce bir pod’u yeniler, sonra diğerini, sonra diğerini. Bunu değiştirebiliriz.
+
+### Deployment Replicas’ını Değiştirme
+
+```shell
+kubectl scale deployment <deploymentName> --replicas=<yeniReplicaSayısı>
+```
+
+### Deployment Silme
+
+```shell
+kubectl delete deployments <deploymentName>
+```
+
+### **YAML ile Deployment Oluşturma**
+
+1. Herhangi bir pod oluşturacak yaml dosyasındaki **`metadata`** altında kalan komutları kopyala:
+
+```yaml
+# podexample.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: examplepod
+  labels:
+    app: frontend
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 80
+```
+
+1. Deployment oluşturacak yaml dosyasında **`template`** kısmının altına yapıştır. _(Indent’lere dikkat!)_
+2. **pod template içerisinden `name` alanını sil.**
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: firstdeployment
+  labels:
+    team: development
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: frontend # template içerisindeki pod'la eşleşmesi için kullanılacak label.
+  template:	    # Oluşturulacak podların özelliklerini belirttiğimiz alan.
+    metadata:
+      labels:
+        app: frontend # deployment ile eşleşen pod'un label'i.
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80 # dışarı açılacak port.
+```
+
+* Her deployment’ta **en az bir tane** `selector` tanımı olmalıdır.
+* **Birden fazla deployment yaratacaksanız, farklı label’lar kullanmak zorundasınız.** Yoksa deploymentlar hangi podların kendine ait olduğunu karıştırabilir. **Ayrıca, aynı labelları kullanan singleton bir pod’da yaratmak sakıncalıdır!**
+
+# 39. ReplicaSet
+
+K8s’de x sayıda pod oluşturan ve bunları yöneten object türü aslında **deployment değildir.** **ReplicaSet**, tüm bu işleri üstlenir. Biz deployment’a istediğimiz derived state’i söylediğimizde, deployments object’i bir ReplicaSet object’i oluşturur ve tüm bu görevleri ReplicaSet gerçekleştirir.
+
+K8s ilk çıktığında **Replication-controller** adında bir object’imiz vardı. Halen var ama kullanılmıyor.
+
+```shell
+kubectl get replicaset # Aktif ReplicaSet'leri listeler.
+```
+
+Bir deployment tanımlıyken, üzerinde bir değişiklik yaptığımızda; deployment **yeni bir ReplicaSet** oluşturur ve bu ReplicaSet yeni podları oluşturmaya başlar. Bir yandan da eski podlar silinir. **Fakat replicaset silinmez.**
+
+### Deployment üzerinde yapılan değişiklikleri geri alma
+
+```shell
+kubectl rollout undo deployment <deploymentName>
+```
+
+Bu durumda ise eski deployment yeniden oluşturulur ve eski ReplicaSet önceki podları oluşturmaya başlar. İşte bu sebeple, tüm bu işlemleri **manuel yönetmemek adına** bizler direkt ReplicaSet oluşturmaz, işlemlerimize deployment oluşturarak devam ederiz.
+
+—> **Deployment > ReplicaSet > Pods**
+
+* ReplicaSet, YAML olarak oluşturulmak istendiğinde **tamamen deployment ile aynı şekilde oluşturulur. Sadece kind kısmına ReplicaSet yazılır.**
+Replicaset yaml da image da yaptığımız bir değişikliği var olan podlara uygulamaz. Ancak yeni pod oluşturacaksa yeni image dan oluşturur. Bunun için deployment objesini kullanıyoruz.
+
+# 40. Rollout ve Rollback
+
+Rollout ve Rollback kavramları, **deploment’ın** güncellemesi esnasında devreye girer, anlam kazanır.
+
+**YAML** ile deployment tanımlaması yaparken **`strategy`** olarak 2 tip seçilir:
+
+### Rollout Strategy - **`Recreate`**
+
+```shell
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rcdeployment
+  labels:
+    team: development
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: recreate 
+  strategy:
+    type: Recreate # recreate === Rollout strategy
+... 
+```
+
+* “_Ben bu deployment’ta bir değişiklik yaparsam, öncelikle tüm podları sil, sonrasında yenilerini oluştur._” Bu yöntem daha çok **hardcore migration** yapıldığında kullanılır.
+
+Uygulamamızın yeni versionuyla eski versionunun birlikte çalışması **sakıncalı** ise bu yöntem seçilir. ****&#x20;
+
+**Örneğin,** bir RabbitMQ consumer'ımız olduğunu varsayalım. Böyle bir uygulamada eski version ve yeni version'un birlikte çalışması genellikle tercih edilen bir durum değildir. Bu sebeple, strategy olarak `recreate` tercih edilmelidir.
+
+### Rollback Strategy - **`RollingUpdate`**
+
+```shell
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rolldeployment
+  labels:
+    team: development
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: rolling
+  strategy:
+    type: RollingUpdate # Rollback Strategy
+    rollingUpdate:
+      maxUnavailable: 2 # Güncelleme esnasında aynı anda kaç pod silineceği
+      maxSurge: 2 # Güncelleme esnasında toplam aktif max pod sayısı
+  template:
+  ...
+```
+
+* Eğer YAML dosyasında strategy belirtmezseniz, **default olarak RollingUpdate seçilir.** **maxUnavailable ve maxSurge** değerleri ise default **%25’dir.**
+* RollingUpdate, Create’in tam tersidir. “Ben bir değişiklik yaptığım zaman, hepsini silip; yenilerini **oluşturma**.” Bu strateji’de önemli 2 parametre vardır:
+  * **`maxUnavailable`** –> En fazla burada yazılan sayı kadar pod’u sil. Bir güncellemeye başlandığı anda en fazla x kadar pod silinecek sayısı. (%20 de yazabiliriz.)
+  * **`maxSurge`** –> Güncelleme geçiş sırasında sistemde toplamda kaç **max aktif pod’un olması gerektiği sayıdır.**
+
+**Örnek**
+
+Bir deployment ayağa kaldırdığımızı düşünelim. Image = nginx olsun. Aşağıdaki komut ile varolan deployment üzerinde güncelleme yapalım. nginx image'ı yerine httpd-alphine image'ının olmasını isteyelim:
+
+```shell
+kubectl set image deployment rolldeployment nginx=httpd-alphine --record=true
+```
+
+* `--record=true` parametresi bizim için tüm güncelleme aşamalarını kaydeder. Özellikle, bir önceki duruma geri dönmek istediğimizde işe yarar.
+
+### Yapılan değişikliklerin listelenmesi
+
+```shell
+# rolldeployment = deploymentName
+# tüm değişiklik listesi getirilir.
+kubectl rollout history deployment rolldeployment 
+
+# nelerin değiştiğini spesifik olarak görmek için:
+kubectl rollout history deployment rolldeployment --revision=2
+```
+
+### Yapılan değişikliklerin geri alınması
+
+```shell
+# rolldeployment = deploymentName
+# Bir önceki duruma geri dönmek için:
+kubectl rollout undo deployment rolldeployment
+
+# Spesifik bir revision'a geri dönmek için:
+kubectl rollout undo deployment rolldeployment --to-revision=1
+```
+
+### Canlı olarak deployment güncellemeyi izlemek
+
+```shell
+# rolldeployment = deploymentName
+kubectl rollout status deployment rolldeployment -w 
+```
+
+### Deployment güncellemesi esnasında pause’lamak
+
+Güncelleme esnasında bir problem çıktı ve geri de dönmek istemiyorsak, ayrıca sorunun nereden kaynaklandığını da tespit etmek istiyorsak kullanılır.
+
+```shell
+# rolldeployment = deploymentName
+kubectl rollout pause deployment rolldeployment
+```
+
+### Pause’lanan deployment güncellemesini devam ettirmek
+
+```shell
+kubectl rollout resume deployment rolldeployment
+```
+
