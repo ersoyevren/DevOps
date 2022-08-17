@@ -1,4 +1,4 @@
-[# ⛵ Nedir, Components, Nodes](https://github.com/aytitech/k8sfundamentals)
+(https://github.com/aytitech/k8sfundamentals)
 
 # 2. Neden Kubernetes öğrenmeniz gerekiyor?
 ## Neden Gerekli?
@@ -1242,6 +1242,181 @@ Bir pod silindiğinde yeni oluşacak pod için, yeni bir endpoint oluşturulur.
 
 	
 # ⚡ Volume, Secret, ConfigMap
+	
+# 44. Liveness probes
+
+Eğer container çalışmassa kubelet contaınerı kapatıp tekrar kuruyor. Fakat ayakta olmasına rağmen containerin görevini yerine getirmiyorsa kubelet bunu göremiyor. Doğal olarak containeri kapatıp yeniden açmayı denemiyor. Bu durumda liveless probes ile çözebiliyoruz.
+	
+	![image](https://user-images.githubusercontent.com/103413194/185057781-f4ca40d9-de1c-462d-a10f-df0d72ad7481.png)
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: liveness
+  name: liveness-http
+spec:
+  containers:
+  - name: liveness
+    image: k8s.gcr.io/liveness
+    args:
+    - /server
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+        httpHeaders:
+        - name: Custom-Header
+          value: Awesome
+      initialDelaySeconds: 3
+      periodSeconds: 3
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: liveness
+  name: liveness-exec
+spec:
+  containers:
+  - name: liveness
+    image: k8s.gcr.io/busybox
+    args:
+    - /bin/sh
+    - -c
+    - touch /tmp/healthy; sleep 30; rm -rf /tmp/healthy; sleep 600
+    livenessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/healthy
+      initialDelaySeconds: 5
+      periodSeconds: 5
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: goproxy
+  labels:
+    app: goproxy
+spec:
+  containers:
+  - name: goproxy
+    image: k8s.gcr.io/goproxy:0.1
+    ports:
+    - containerPort: 8080
+    livenessProbe:
+      tcpSocket:
+        port: 8080
+      initialDelaySeconds: 15
+      periodSeconds: 20
+	
+# 45. Readiness probes
+
+	deployment ıle yeni imagelar ayaga kaldırdım. Bunlar oluşunca service-load balancer a baglanacak ve internet sıtemden gelen requestlere cevap verecek. eger contaıner calısıyorsa fakat ınternet sıtemı sunmaya hazır degılse ne olacak? veya load balancer servisinden trafik almaya hazır olduğunu nasıl anlayacağım. 
+
+	![image](https://user-images.githubusercontent.com/103413194/185067925-5fb05741-3fbe-4546-bd3b-db3a2e2b2a46.png)
+
+	![image](https://user-images.githubusercontent.com/103413194/185068817-857270fc-a4cb-4805-a353-393b53592f1b.png)
+
+	apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    team: development
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: ozgurozturknet/k8s:blue
+        ports:
+        - containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+          initialDelaySeconds: 20
+          periodSeconds: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+	
+# 46. Resource limits
+	
+	containerimızı bir namespacenin içine kurduk. Eğer containerin memory ve cpu suna bir sınırlama getirmezsek namespace simizin tüm kaynağını kullanacaktır. 
+	bundan dolayı request(istenilen) ve limits(kullanabileceği son seviye) kriterleri belirleriz. Eğer memory belırlenen limite gelirse bunu gecemiyeceğinden yeniden pod oluşturulacaktır.
+	
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: requestlimit
+  name: requestlimit
+spec:
+  containers:
+  - name: requestlimit
+    image: ozgurozturknet/stress
+    resources:
+      requests:
+        memory: "64M"
+        cpu: "250m"
+      limits:
+        memory: "256M"
+        cpu: "0.5"
+
+![image](https://user-images.githubusercontent.com/103413194/185073755-ffcc6220-1b37-43bf-8556-9b95114b5cc5.png)
+
+![image](https://user-images.githubusercontent.com/103413194/185073807-a9079974-02fe-493d-a465-4f840932fb15.png)
+
+#	47. Environment variable
+
+Environment variables uygulamamızın kodu dışında bulunur, uygulamamızın çalıştığı yerde kullanılabilir. Uygulamalarımızın yapılandırmasını kodundan ayırmak için kullanılabilir, bu da uygulamalarımızın farklı ortamlara kolayca dağıtılmasını sağlar. Node.js uygulamalarında, ortam değişkenleri process.env genel değişkeni aracılığıyla kullanılabilir. .Env dosyası hiçbir zaman kaynak kodu deposunda olmamalıdır.
+Environment variables ımage hard code olarak gömmeyız. container oluştururken env bölümü altında bunları tanımlarız.
+	
+apiVersion: v1
+kind: Pod
+metadata:
+  name: envpod
+  labels:
+    app: frontend
+spec:
+  containers:
+  - name: envpod
+    image: ozgurozturknet/env:latest
+    ports:
+    - containerPort: 80
+    env:
+      - name: USER
+        value: "Ozgur"
+      - name: database
+        value: "testdb.example.com"
+	
+![image](https://user-images.githubusercontent.com/103413194/185083812-facb0cc7-243f-48fe-a061-7dd0d9debde4.png)
+
 
 # 48. Volume
 
@@ -1345,11 +1520,24 @@ spec:
 * Hassas bilgileri (DB User, Pass vb.) Environment Variables içerisinde saklayabilsekte, bu yöntem ideal olmayabilir.
 * Secret object’i sayesinde bu hassas bilgileri uygulamanın object tanımlarını yaptığımız YAML dosyalarından ayırıyoruz ve ayrı olarak yönetebiliyoruz.
 * Token, username, password vb. tüm bilgileri secret içerisinde saklamak her zaman daha güvenli ve esnektir.
+	
+![image](https://user-images.githubusercontent.com/103413194/184618725-f653c641-e11b-45c8-b744-28d1d5e02f00.png)
 
+![image](https://user-images.githubusercontent.com/103413194/184619377-38df4602-a948-42a8-8ef7-825dfe7faa74.png)
+	
+	![image](https://user-images.githubusercontent.com/103413194/184619600-669203cd-ad0e-4a93-9fe9-bfba71961697.png)
+	
+![image](https://user-images.githubusercontent.com/103413194/184632990-f37a5574-b3a8-48b8-9eae-8bfc96d5847e.png)
+
+### Birinci dosyanın yerine 2. dosyayı yazmış oluyoruz. Amaç hassas bilgileri korumak.
 ### Declarative Secret Oluşturma
 
 * Atayacağımız secret ile oluşturacağımız pod’lar **aynı namespace üzerinde olmalıdır.**
 * 8 farklı tipte secret oluşturabiliriz. **`Opaque`** generic bir type’dır ve hemen hemen her hassas datamızı bu tipi kullanarak saklayabiliriz.
+	
+	![image](https://user-images.githubusercontent.com/103413194/184633752-04949cc4-0157-429f-90dd-68245a71eeee.png)
+
+dosyayı nereden aldığını görüyoruz.
 
 Örnek bir secret.yaml dosyası:
 
@@ -1474,6 +1662,11 @@ kubectl exec <podName> -- printenv
 * ConfigMap’ler Secret objectleriyle tamamen aynı mantıkta çalışır. Tek farkı; Secret’lar etcd üzerinde base64 ile encoded edilerek encrypted bir şekilde saklanır. ConfigMap’ler ise encrypted edilmez ve bu sebeple hassas datalar içermemelidir.
 * Pod içerisine **Volume** veya **Env. Variables** olarak tanımlayabiliriz.
 * Oluşturulma yöntemleri Secret ile aynı olduğundan yukarıdaki komutlar geçerlidir.
+
+	![image](https://user-images.githubusercontent.com/103413194/184618994-d77e558b-7a55-4c96-b6b5-9caece1dbd17.png)
+
+
+	![image](https://user-images.githubusercontent.com/103413194/184619084-3bb761bc-e73a-4f90-82cf-23978c7c4cbb.png)
 
 ```yaml
 apiVersion: v1
@@ -1609,5 +1802,7 @@ spec:
                 path: config.json
 ```
 
+# 51. Node Affinity
 	
+![image](https://user-images.githubusercontent.com/103413194/184653159-07ee616e-bf58-4a44-9b72-ef6f7c81f2bb.png)
 
