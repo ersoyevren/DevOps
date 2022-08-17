@@ -1890,6 +1890,7 @@ Not2: Bu durumda sadece 2. pod oluşur.
 komutunu yazarsam 1. ve 3. pod da çalışacaktır.
 	
 52. Pod Affinity
+	
 Eğer biz podu hangi kriterlere sahip node üzerinde oluşturmamızı belirleyeceksek nodeaffinity yi kullanırız. Fakat eğer biz pod u oluştururken diğer podları da kriter olarak kabul ediyorsak o zaman podaffinity i kullanmalıyız.
 	
 	![image](https://user-images.githubusercontent.com/103413194/185098987-e3adcd6a-5ac3-431a-a869-6e723370a8b5.png)
@@ -1954,11 +1955,253 @@ spec:
 	
 
 pod frontendpod da topologkey e bakıldıgında hostnamesi(nodeworker) aynı olan yerde çalıştırılacak.
+	
 podantıaffınıty de ise şunu diyoruz: key:deployment ve value:prod olan zone içerisinde çalıştırma. başka bir yerde çalıştır.
 	
+# 53. Taint ve Toleration
+	
+taint ve toleration kavramları node ların pod seçmesini sağlamaktadır.
+
+kubectl taint nodes <node-name> key=value:taint-effect
+kubectl taint nodes minikube platform=production:NoSchedule
+	
+kubectl taint nodes minikube platform- 
+
+komutu ile tainte silebiliyorum.
+
+Taint tanımlanırken dikkat edilmesi gereken 2 şey vardır biri key-value lerin düzgün yazılıp yazılmadığı diğeri ise taint effect in istenilen şekilde kullanılıp kulanılmadığıdır..
+
+Taint effect’in 3 farklı türü vardır.
+	
+Bunlar NoSchedule PreferNoSchedule ve NoExecute
+
+NoSchedule da tolerationu node un taint i ile uyuşmayan podlar o poda sokulmaz
+
+PreferNoSchedule da ise bu durum kesin değildir. Yani tolerationu node un taintine uyuşmayan podlar node a dahil edilmemeye çalışılsa da bu garanti edilmez.
+
+NoExecute da içinde bulunan podlar içinde taint toleration uyuşmazlığı varsa o podlar dışarı atılır. Örneğin Node 1 in tainti mavi yapılmadan önce A B C D podları node 1 in içinde olsaydı, taintin mavi yapılması işleminden sonra node1 in içinde sadece D podu kalacaktı. Diğer podlar dışarı atılacaktı.
+
+	![image](https://user-images.githubusercontent.com/103413194/185172448-6fa12340-a00b-4c0a-93a2-e45975b0e35f.png)
+
+burada bir tane container nginx imajından ve terminate edildiğinde container tekrar başlatılmayacak.
+	
+![image](https://user-images.githubusercontent.com/103413194/185168147-acce9937-d961-4028-b872-7cc8d05bfbf7.png)
+
+**NOT1** : Bir pod u istedigimiz node da calıştırmak istiyorsak o zaman node da ki key ve value değerlerini operator e yazılacak değişkeni de dikkate alarak node ve podaffinity ile halledebiliriz. Bu node larda başka podlarda çalışabilir. key ve value değerleri farklı olan. affinity ile aslında bir pod un nerede ve hangi kriterlere göre schedule edileceği belirlenir.
+
+**NOT1** : Eğer node un içinde benim belirlediğim kriterlere göre pod konumlandırmak istiyorsam o zaman taint ve toleration kullanmalıyım.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: toleratedpod1
+  labels:
+    env: test
+spec:
+  containers:
+  - name: toleratedcontainer1
+    image: ozgurozturknet/k8s
+  tolerations:
+  - key: "platform"
+    operator: "Equal"
+    value: "production"
+    effect: "NoSchedule"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: toleratedpod2
+  labels:
+    env: test
+spec:
+  containers:
+  - name: toleratedcontainer2
+    image: ozgurozturknet/k8s
+  tolerations:
+  - key: "platform"
+    operator: "Exists"
+    effect: "NoSchedule"
+	
+
+![image](https://user-images.githubusercontent.com/103413194/185174451-884f2dda-5f47-4631-9554-33ba0cb521a0.png)
+
+color=blue uyuşmayan schedule etme ve aynı zamanda buna uymayan podları da sil.
+	
+# 54. DaemonSet
+	
+bu obje dışarıya aktarmak veya takip etmek istediğim loglar veya monitor için genellikle kullanılır.
+
+![image](https://user-images.githubusercontent.com/103413194/185180637-61d8ebcb-dff6-4b4b-ab89-963cef452ebb.png)
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: logdaemonset
+  labels:
+    app: fluentd-logging
+spec:
+  selector:
+    matchLabels:
+      name: fluentd-elasticsearch
+  template:
+    metadata:
+      labels:
+        name: fluentd-elasticsearch
+    spec:
+      tolerations:
+      # this toleration is to have the daemonset runnable on master nodes
+      # remove it if your masters can't run pods
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: fluentd-elasticsearch
+        image: quay.io/fluentd_elasticsearch/fluentd:v2.5.2
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+---
+	
+minikube node add 
+komutuyla yeni bir node ekleyebiliyoruz.
+	
+# 55. Persistent Volume ve Persistent Volume Claim
+	
+Clusterımızın dışında bir volume oluşturup onu podumuza baglamamız gerekiyor ki volumemuızın yaşam süresi poddan uzun olsun.
+
+	![image](https://user-images.githubusercontent.com/103413194/185192393-99e3f9fc-bca5-4445-b746-cb2015c70267.png)
+
+	![image](https://user-images.githubusercontent.com/103413194/185193226-270fd520-10eb-440f-b000-f171334d22a5.png)
+
+	![image](https://user-images.githubusercontent.com/103413194/185193347-e0f7b539-5de1-4f76-a878-525c4bfd1e06.png)
+	
+persistentvolume de volume ile işimiz bitince ona nasıl davranacağımızı belirliyoruz. 3 secenek var.
+
+1. Retain : volume aynı şekilde kalıyor. içindeki dosyaları manuel olarak başka bir yere taşıyabiliyoruz.
+
+2. Recycle: volume kalıyor ama içindeki dosyalar siliniyor. Doğal olarak veriye ulaşamıyoruz ama volume alanını tekrar kullanabiliyoruz.
+
+3. Delete: volume tamamen siliyor.
+	
+NOT : Volume oluşturdum. Fakat direk buna pod bağlayamıyorum. bunun için bir tane de persistent volume claim oluşturuyorum.
+	
+![image](https://user-images.githubusercontent.com/103413194/185195832-de1ad1ad-d1d4-412a-a87a-0b910a645c8c.png)
+
+peki podu volume nasıl bağlayacagız.
+
+	![image](https://user-images.githubusercontent.com/103413194/185196490-477246cc-16b0-489b-a78d-6a2cde80afb2.png)
 
 	
+# 56. PV ve PVC uygulama
 	
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+   name: mysqlpv
+   labels:
+     app: mysql
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  nfs:
+    path: /
+    server: 10.255.255.10
+	
+burada bir tane persistvolume oluşturuyoruz. bunu aslında sıstem kurucu oluşturuyor.
+	
+daha sonra bir tane persistentvolumeclaim oluşturuyoruz.
+
+	apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysqlclaim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: ""
+  selector:
+    matchLabels:
+      app: "mysql"
+	
+Burada matchlabels uzeridnen bound oluyor. bunu şu şekilde görebiliyoruz.
+
+![image](https://user-images.githubusercontent.com/103413194/185210487-7a18408d-f288-469b-94f0-fb90ffb2e945.png)
+
+peki bunu poda nasıl bağlayacağız.
+	
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysqlsecret
+type: Opaque
+stringData:
+  password: P@ssw0rd!
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysqldeployment
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:5.7
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - mountPath: "/var/lib/mysql"
+              name: mysqlvolume
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysqlsecret
+                  key: password
+      volumes:
+        - name: mysqlvolume
+          persistentVolumeClaim:
+            claimName: mysqlclaim
+
+
+# 57. Storage class
+
+
 
 
 	
