@@ -1806,3 +1806,160 @@ spec:
 	
 ![image](https://user-images.githubusercontent.com/103413194/184653159-07ee616e-bf58-4a44-9b72-ef6f7c81f2bb.png)
 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nodeaffinitypod1
+spec:
+  containers:
+  - name: nodeaffinity1
+    image: ozgurozturknet/k8s
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: app
+            operator: In #In, NotIn, Exists, DoesNotExist
+            values:
+            - blue
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nodeaffinitypod2
+spec:
+  containers:
+  - name: nodeaffinity2
+    image: ozgurozturknet/k8s
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - blue
+      - weight: 2
+        preference:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - red
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nodeaffinitypod3
+spec:
+  containers:
+  - name: nodeaffinity3
+    image: ozgurozturknet/k8s
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: app
+            operator: Exists #In, NotIn, Exists, DoesNotExist
+
+affinity pod un altındaki spec kısmında olusturulur. 
+**requiredDuringSchedulingIgnoredDuringExecution**
+	
+podaffinity de amaç belirlenen (örneğin key: app ve values: blue) anahtarı nodun labelında arar. varsa o nodun altında podu oluşturur yoksa oluşturmaz.
+operator de ise node selector den ayrışmamızı ve daha fazla iş yapabilmemizi sağlıyor. 
+	operatorde #In, NotIn, Exists, DoesNotExist
+Örneğin operatorde **In**  yazıyorsa (key: app ve values: blue) labela sahıp node da schedule edıyor.
+Örneğin operatorde **NotIn** yazıyorsa (key: app ve values: blue) labela **sahip olmayan** node da schedule edıyor. buna unaffinity denir.
+Örneğin operatorde **Exists** yazıyorsa (key: app ) labela da olmasi yeterli olacakti.
+Örneğin operatorde **Exists** yazıyorsa (key: app ) labela da olmamasi gerekir.
+	
+**preferredDuringSchedulingIgnoredDuringExecution:**
+weight degerine göre öncelik oluşuyor. Weight 1 ile 100 arasında değer alıyor. değeri yüksek olan oluşuyor. 
+Yukarıdaki yaml dosyasından yola çıkarsak pod, weight 2 deki key ve value değerlerini sağlayan node da oluşturulacak eğer böyle bir node yoksa weight 1 deki key ve value değerlerine bakacak. Eğer onu da bulamazsa herhangi bir node da oluşturacak.
+**preferredDuringSchedulingIgnoredDuringExecution:** ifadesinin içindeki IgnoreDuringExecution aslında pod oluşturulduktan sonra nodeworker daki label değişse de pod un çalışmaya devam etmesi anlamına geliyor.
+Not: Yaml dosyasında 1. pod sadece key ve value değerini sağlıyorsa oluşacak. 2. pod her kriterlere göre her halükarda oluşacak ve 3. pod operator kısmı Exist olarak tanımlı olduğu için nodeworker da label da key:app olarak tanımlıysa oluşacak.
+	
+Not2: Bu durumda sadece 2. pod oluşur.
+	
+![image](https://user-images.githubusercontent.com/103413194/185093686-6228bc7c-a606-45a0-a4d6-3c3360f298c9.png)
+
+komutunu yazarsam 1. ve 3. pod da çalışacaktır.
+	
+52. Pod Affinity
+Eğer biz podu hangi kriterlere sahip node üzerinde oluşturmamızı belirleyeceksek nodeaffinity yi kullanırız. Fakat eğer biz pod u oluştururken diğer podları da kriter olarak kabul ediyorsak o zaman podaffinity i kullanmalıyız.
+	
+	![image](https://user-images.githubusercontent.com/103413194/185098987-e3adcd6a-5ac3-431a-a869-6e723370a8b5.png)
+
+Bu kurgudan yola çıkarsak, frondend ve database  farklı az lerde oluşmuş. bu ücretlendirilen bir durum. Bunun çözümü ben komut olarak git database hangi az de ise veya worknode da oluşturulduysa frondend orada oluştur.
+	
+![image](https://user-images.githubusercontent.com/103413194/185099636-569f3766-a29f-48f2-b147-68e2dc852eec.png)
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: frontendpod
+  labels:
+    app: frontend
+    deployment: test
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 80
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cachepod
+spec:
+  affinity:
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - frontend
+        topologyKey: kubernetes.io/hostname
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: color
+              operator: In
+              values:
+              - blue
+          topologyKey: kubernetes.io/hostname
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: deployment
+              operator: In
+              values:
+              - prod
+          topologyKey: topology.kubernetes.io/zone
+  containers:
+  - name: cachecontainer
+    image: redis:6-alpine
+	
+
+pod frontendpod da topologkey e bakıldıgında hostnamesi(nodeworker) aynı olan yerde çalıştırılacak.
+podantıaffınıty de ise şunu diyoruz: key:deployment ve value:prod olan zone içerisinde çalıştırma. başka bir yerde çalıştır.
+	
+
+	
+	
+
+
+	
+	
