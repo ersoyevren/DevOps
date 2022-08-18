@@ -40,7 +40,7 @@ Diğer alternatifler -> Docker Swarm, Apache H2o
 * Her ay patch version yayınlar.
 * Bir kubernetes platformu en fazla 1 yıl kullanılır, 1 yıldan sonra güncellemek gerekmektedir.
 
-![](<.gitbook/assets/Screen Shot 2021-12-12 at 18.26.50.png>)
+![image](<.gitbook/assets/Screen Shot 2021-12-12 at 18.26.50.png>)
 
 ### Kubernetes Tasarımı ve Yaklaşımı
 
@@ -64,7 +64,7 @@ K8s, **microservice mimarisi dikkate alınarak** oluşturulmuştur.
 ![image](https://user-images.githubusercontent.com/103413194/184483333-38e7d509-1fa2-411c-98f8-c54ad561add0.png)
 
 
-![](<.gitbook/assets/Screen Shot 2021-12-12 at 19.23.15.png>)
+![image](<.gitbook/assets/Screen Shot 2021-12-12 at 19.23.15.png>)
 
 ### **Control Plane** (Master Nodes)
 
@@ -73,8 +73,8 @@ Aşağıdaki, 4 component k8s yönetim kısmını oluşturur ve **master-node** 
 * **Master-node** -> Yönetim modullerinin çalıştığı yerdir.
 * **Worker-node** -> İş yükünün çalıştığı yerdir.
 * 
-![](<.gitbook/assets/Screen Shot 2022-07-19 at 12.17.04.png>)
-![](<.gitbook/assets/Screen Shot 2021-12-12 at 18.48.28.png>)
+![image](<.gitbook/assets/Screen Shot 2022-07-19 at 12.17.04.png>)
+![image](<.gitbook/assets/Screen Shot 2021-12-12 at 18.48.28.png>)
 
 * **kube-apiserver** **(api) –>** K8s’in beyni, **ana haberleşme merkezi, giriş noktasıdır**. Bir nev-i **Gateway** diyebiliriz. Tüm **componentler** ve **node**’lar, **kube-apiserver** üzerinden iletişim kurar. Ayrıca, dış dünya ile platform arasındaki iletişimi de **kube-apiserver** sağlar. Bu denli herkesle iletişim kurabilen **tek componenttir**. **Authentication ve Authorization** görevini üstlenir.
 
