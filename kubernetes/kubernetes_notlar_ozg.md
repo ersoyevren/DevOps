@@ -40,7 +40,7 @@ Diğer alternatifler -> Docker Swarm, Apache H2o
 * Her ay patch version yayınlar.
 * Bir kubernetes platformu en fazla 1 yıl kullanılır, 1 yıldan sonra güncellemek gerekmektedir.
 
-![image](<.gitbook/assets/Screen Shot 2021-12-12 at 18.26.50.png>)
+![image](https://user-images.githubusercontent.com/103413194/185373779-418bfaef-5059-4a97-a17d-8db62e2c5a53.png)
 
 ### Kubernetes Tasarımı ve Yaklaşımı
 
@@ -63,8 +63,7 @@ K8s, **microservice mimarisi dikkate alınarak** oluşturulmuştur.
 
 ![image](https://user-images.githubusercontent.com/103413194/184483333-38e7d509-1fa2-411c-98f8-c54ad561add0.png)
 
-
-![image](<.gitbook/assets/Screen Shot 2021-12-12 at 19.23.15.png>)
+![image](https://user-images.githubusercontent.com/103413194/185374477-782ceb4a-348f-4127-95ea-3c378765dd4c.png)
 
 ### **Control Plane** (Master Nodes)
 
@@ -73,15 +72,14 @@ Aşağıdaki, 4 component k8s yönetim kısmını oluşturur ve **master-node** 
 * **Master-node** -> Yönetim modullerinin çalıştığı yerdir.
 * **Worker-node** -> İş yükünün çalıştığı yerdir.
 * 
-![image](<.gitbook/assets/Screen Shot 2022-07-19 at 12.17.04.png>)
-![image](<.gitbook/assets/Screen Shot 2021-12-12 at 18.48.28.png>)
+![image](https://user-images.githubusercontent.com/103413194/185374576-5c7a0c72-1657-45b4-b2c9-ea9b2adaa419.png)
 
+![image](https://user-images.githubusercontent.com/103413194/185374611-6ced7136-d3c6-43d0-bcb2-c460e3152b09.png)
+
+**Master-node**
 * **kube-apiserver** **(api) –>** K8s’in beyni, **ana haberleşme merkezi, giriş noktasıdır**. Bir nev-i **Gateway** diyebiliriz. Tüm **componentler** ve **node**’lar, **kube-apiserver** üzerinden iletişim kurar. Ayrıca, dış dünya ile platform arasındaki iletişimi de **kube-apiserver** sağlar. Bu denli herkesle iletişim kurabilen **tek componenttir**. **Authentication ve Authorization** görevini üstlenir.
-
 * **etcd** **->** K8s’in tüm cluster verisi, metada bilgileri ve Kubernetes platformunda oluşturulan componentlerin ve objelerin bilgileri burada tutulur. Bir nevi **Arşiv odası.** etcd, **key-value** şeklinde dataları tutar. Diğer componentler, etdc ile **direkt haberleşemezler.** Bu iletişimi, **kube-apiserver** aracılığıyla yaparlar.
-* 
 * **kube-scheduler (sched) ->** K8s’i çalışma planlamasının yapıldığı yer. Yeni oluşturulan ya da bir node ataması yapılmamış Pod’ları izler ve üzerinde çalışacakları bir **node** seçer. (_Pod = container_) Bu seçimi yaparken, CPU, Ram vb. çeşitli parametreleri değerlendirir ve **bir seçme algoritması sayesinde pod için en uygun node’un hangisi olduğuna karar verir.**
-* 
 * **kube-controller-manager (c-m) ->** K8s’in kontrollerinin yapıldığı yapıdır. **Mevcut durum ile istenilen durum arasında fark olup olmadığını denetler.** Örneğin; siz 3 cluster istediniz ve k8s bunu gerçekleştirdi. Fakat bir sorun oldu ve 2 container kaldı. kube-controller, burada devreye girer ve hemen bir cluster daha ayağa kaldırır. Tek bir binary olarak derlense de içerisinde bir çok controller barındırır:
   * Node Controller,
   * Job Controller,
@@ -199,8 +197,6 @@ minikube stop
 ## Kubectl
 
 ![](<.gitbook/assets/Screen Shot 2021-12-12 at 23.53.55.png>)
-
-![image](https://user-images.githubusercontent.com/103413194/184497612-6c6f651c-84b9-4b2b-87bc-f5b5653709a3.png)
 
 
 * kubectl ile mevcut cluster’ı yönetimini **config** dosyası üzerinden yapmamız gerekir. Minikube gibi tool’lar config dosyalarını otomatik olarak oluşturur.
@@ -516,6 +512,21 @@ spec:
 		- containerPort: 80 # Container'e dışarıdan erişilecek port
 ```
 
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: firstpod
+  labels:
+    app: frontend
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 80
+```
+
 ### K8s’e YAML Dosyasını Declare Etme
 
 ```shell
@@ -588,6 +599,7 @@ canli olarak degisimi izliyoruz.
 
 :ok\_hand: Bu sebeple **1 Pod = 1 Container = 1 uygulama** olmalıdır! Diğer senaryolar **Anti-Pattern** olur.
 
+
 ### Peki, neden pod’lar neden multi-container’a izin veriyor?
 
 –> Cevap: Bazı uygulamalar bütünleşik (bağımlı) çalışır. Yani ana uygulama çalıştığında çalışmalı, durduğunda durmalıdır. Bu tür durumlarda bir pod içerisine birden fazla container koyabiliriz.
@@ -602,8 +614,31 @@ kubectl exec -it <podName> -c <containerName> -- /bin/sh
 
 # 31. Çoklu container pod uygulama
 
-> _k8sfundamentals/podmulticontainer.yaml dosyası örneğine bakabilirsiniz._
-
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multicontainer
+spec:
+  containers:
+  - name: webcontainer
+    image: nginx
+    ports:
+      - containerPort: 80
+    volumeMounts:
+    - name: sharedvolume
+      mountPath: /usr/share/nginx/html
+  - name: sidecarcontainer
+    image: busybox
+    command: ["/bin/sh"]
+    args: ["-c", "while true; do wget -O /var/log/index.html https://raw.githubusercontent.com/ozgurozturknet/hello-world/master/index.html; sleep 15; done"]
+    volumeMounts:
+    - name: sharedvolume
+      mountPath: /var/log
+  volumes:
+  - name: sharedvolume
+    emptyDir: {}
+```
 # 32. Init container
 
 ### Init Container ile bir Pod içerisinde birden fazla Container Çalıştırma
@@ -615,9 +650,21 @@ Go’daki `init()` komutu gibi ilk çalışan container’dır. Örneğin, uygul
 3. Uygulama container’ı, Init Container kapandıktan sonra çalışmaya başlar. **Init Container kapanmadan uygulama container’ı başlamaz.**
 **Ornek**: Uygulama containerin ihtiyacı olan bazı config dosyalarının son güncel halinin uygulama başlamadan sisteme çekilmesi gerekiyor. Bu durumda ilk önce init container ile çekme işini halledip daha sonra ana uygulama başlar.
 
-![image](https://user-images.githubusercontent.com/103413194/184529084-bcc4ac7f-a223-4510-ae88-489e41a13af8.png)
-
-> _k8sfundamentals/podinitcontainer.yaml dosyası örneğine bakabilirsiniz._
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: initcontainerpod
+spec:
+  containers:
+  - name: appcontainer
+    image: busybox
+    command: ['sh', '-c', 'echo The app is running! && sleep 3600']
+  initContainers:
+  - name: initcontainer
+    image: busybox
+    command: ['sh', '-c', "until nslookup myservice; do echo waiting for myservice; sleep 2; done"]
+```
 
 # 33. Label ve selector
 
@@ -801,7 +848,7 @@ kubectl annotate pods annotationpod foo=bar
 
 kubectl annotate pods annotationpod foo- # Siler.
 ```
-# Namespace
+# 36. Namespace
 
 * 10 farklı ekibin tek bir **file server** kullandığı bir senaryo düşünelim:
   * Bir kişinin yarattığı bir dosyayı başkası overwrite edebilir ya da isim çakışmasına sebep olabilir,
@@ -1020,7 +1067,6 @@ spec:
       app: recreate 
   strategy:
     type: Recreate # recreate === Rollout strategy
-... 
 ```
 
 * “_Ben bu deployment’ta bir değişiklik yaparsam, öncelikle tüm podları sil, sonrasında yenilerini oluştur._” Bu yöntem daha çok **hardcore migration** yapıldığında kullanılır.
@@ -1112,71 +1158,87 @@ kubectl rollout resume deployment rolldeployment
 ```
 
 # 41. Kubernetes ağ altyapısı
-K8s Temel Ağ Altyapısı
-Aşağıdaki üç kural dahilinde K8s network yapısı ele alınmıştır (olmazsa olmazdır):
+## K8s Temel Ağ Altyapısı
 
-K8s kurulumda pod’lara ip dağıtılması için bir IP adres aralığı (--pod-network-cidr) belirlenir.
-K8s’te her pod bu cidr bloğundan atanacak unique bir IP adresine sahip olur.
-Aynı cluster içerisindeki Pod’lar default olarak birbirleriyle herhangi bir kısıtlama olmadan ve NAT (Network Address Translation) olmadan haberleşebilir.
+Aşağıdaki üç kural dahilinde K8s network yapısı ele alınmıştır (_olmazsa olmazdır_):
+
+1. K8s kurulumda pod’lara ip dağıtılması için bir **IP adres aralığı** (`--pod-network-cidr`) belirlenir.
+2. K8s’te her pod bu cidr bloğundan atanacak **unique bir IP adresine sahip olur.**
+3. **Aynı cluster içerisindeki Pod’lar** default olarak birbirleriyle herhangi **bir kısıtlama olmadan ve NAT (Network Address Translation) olmadan haberleşebilir.**
 
 ![image](https://user-images.githubusercontent.com/103413194/184542131-0cb8a680-1b6f-4524-a257-e51c82735701.png)
 
-K8s içerisindeki containerlar 3 tür haberleşmeye maruz bırakılır:
-Bir container k8s dışındaki bir IP ile haberleşir,
-Bir container kendi node içerisindeki başka bir container’la haberleşir,
-Bir container farklı bir node içerisindeki başka bir container’la haberleşir.
-İlk 2 senaryoda sorun yok ama 3. senaryo’da NAT konusunda problem yaşanır. Bu sebeple k8s containerların birbiri ile haberleşme konusunda Container Network Interface (CNI) projesini devreye almıştır.
-CNI, yanlızca containerların ağ bağlantısıyla ve containerlar silindiğinde containerlara ayrılan kaynakların drop edilmesiyle ilgilenir.
-K8s ise ağ haberleşme konusunda CNI standartlarını kabul etti ve herkesin kendi seçeceği CNI pluginlerinden birini seçmesine izin verdi. Aşağıdaki adreslerden en uygun olan CNI pluginini seçebilirsiniz:
+* K8s içerisindeki containerlar 3 tür haberleşmeye maruz bırakılır:
+  1. Bir container k8s dışındaki bir IP ile haberleşir,
+  2. Bir container kendi node içerisindeki başka bir container’la haberleşir,
+  3. Bir container farklı bir node içerisindeki başka bir container’la haberleşir.
+* İlk 2 senaryoda sorun yok ama 3. senaryo’da NAT konusunda problem yaşanır. Bu sebeple k8s containerların birbiri ile haberleşme konusunda **Container Network Interface (CNI)** projesini devreye almıştır.
+* **CNI, yanlızca containerların ağ bağlantısıyla ve containerlar silindiğinde containerlara ayrılan kaynakların drop edilmesiyle ilgilenir.**
+* **K8s ise ağ haberleşme konusunda CNI standartlarını kabul etti ve herkesin kendi seçeceği CNI pluginlerinden birini seçmesine izin verdi.** Aşağıdaki adreslerden en uygun olan CNI pluginini seçebilirsiniz:
+
 {% embed url="https://github.com/containernetworking/cni" %}
 
 {% embed url="https://kubernetes.io/docs/concepts/cluster-administration/networking" %}
 
-Container’ların “Dış Dünya” ile haberleşmesi konusunu ele aldık. Peki, “Dış Dünya”, Container’lar ile nasıl haberleşecek?
+**Container’ların “Dış Dünya” ile haberleşmesi konusunu ele aldık. Peki, “Dış Dünya”, Container’lar ile nasıl haberleşecek?**
 
-Cevap: Service object’i.
+Cevap: **Service** object’i.
 
 # 42. Service
-43. K8s network tarafını ele alan objecttir.
-Service Objecti Çıkış Senaryosu
+
+* K8s network tarafını ele alan objecttir.
+
+### Service Objecti Çıkış Senaryosu
+
 1 Frontend (React), 1 Backend (Go) oluşan bir sistemimiz olduğunu düşünelim:
 
-Her iki uygulama için birer deployment yazdık ve 3’er pod tanımlanmasını sağladık.
-3 Frontend poduna dış dünyadan nasıl erişim sağlayacağım?
-Frontend’den gelen istek backend’de işlenmeli. Burada çok bir problem yok. Çünkü, her pod’un bir IP adresi var ve K8s içerisindeki her pod birbiriyle bu IP adresleri sayesinde haberleşebilir.
-Bu haberleşmeyi sağlayabilmek için; Frontend podlarının Backend podlarının IP adreslerini bilmeleri gerekir. Bunu çözmek için, frontend deployment’ına tüm backend podlarının IP adreslerini yazdım. Fakat, pod’lar güncellenebilir, değişebilir ve bu güncellemeler esnasında yeni bir IP adresi alabilir. Yeni oluşan IP adreslerini tekrar Frontend deployment’ında tanımlamam gerekir.
-İşte tüm bu durumları çözmek için Service objecti yaratırız. K8s, Pod’lara kendi IP adreslerini ve bir dizi Pod için tek bir DNS adı verir ve bunlar arasında yük dengeler.
+* Her iki uygulama için **birer deployment** yazdık ve **3’er pod** tanımlanmasını sağladık.
+* 3 Frontend poduna dış dünyadan nasıl erişim sağlayacağım?
+* Frontend’den gelen istek backend’de işlenmeli. Burada çok bir problem yok. Çünkü, her pod’un bir IP adresi var ve K8s içerisindeki her pod birbiriyle bu IP adresleri sayesinde haberleşebilir.
+* Bu haberleşmeyi sağlayabilmek için; Frontend podlarının Backend podlarının IP adreslerini **bilmeleri gerekir.** Bunu çözmek için, frontend deployment’ına tüm backend podlarının IP adreslerini yazdım. Fakat, pod’lar güncellenebilir, değişebilir ve bu güncellemeler esnasında **yeni bir IP adresi alabilir. Yeni oluşan IP adreslerini tekrar Frontend deployment’ında tanımlamam gerekir.**
 
-Service Tipleri
-ClusterIP (Container’lar Arası)
+İşte tüm bu durumları çözmek için **Service** objecti yaratırız. **K8s, Pod’lara kendi IP adreslerini ve bir dizi Pod için tek bir DNS adı verir ve bunlar arasında yük dengeler.**
+
+## Service Tipleri
+
+### **ClusterIP** (Container’lar Arası)
+
 –> Bir ClusterIP service’i yaratıp, bunu label’lar sayesinde podlarla ilişkilendirebiliriz. Bu objecti yarattığımız zaman, Cluster içerisindeki tüm podların çözebileceği unique bir DNS adrese sahip olur. Ayrıca, her k8s kurulumunda sanal bir IP range’e sahip olur. (Ör: 10.0.100.0/16)
 
-–> ClusterIP service objecti yaratıldığı zaman, bu object’e bu IP aralığından bir IP atanır ve ismiyle bu IP adresi Cluster’ın DNS mekanizmasına kaydedilir. Bu IP adresi Virtual (Sanal) bir IP adresidir.
+–> ClusterIP service objecti yaratıldığı zaman, bu object’e bu IP aralığından **bir IP atanır** ve **ismiyle bu IP adresi Cluster’ın DNS mekanizmasına kaydedilir.** Bu IP adresi **Virtual (Sanal) bir IP adresidir.**
 
 –> Kube-proxy tarafından tüm node’lardaki IP Table’a bu IP adresi eklenir. Bu IP adresine gelen her trafik Round Troppin algoritmasıyla Pod’lara yönlendirilir. Bu durum bizim 2 sıkıntımızı çözer:
 
-Ben Frontend node’larına bu IP adresini tanımlayıp (ismine de backenddersem), Backend’e gitmen gerektiği zaman bu IP adresini kullan diyebilirim. (Selector = app:backend) Tek tek her seferinde Frontend podlarına Backend podlarının IP adreslerini eklemek zorunda kalmam!
-🎉 🎉 Özetle: ClusterIP Service’i Container’ları arasındaki haberleşmeyi, Service Discovery ve Load Balancing görevi üstlenerek çözer!\
+1. Ben Frontend node’larına bu IP adresini tanımlayıp (ismine de `backend`dersem), Backend’e gitmen gerektiği zaman bu IP adresini kullan diyebilirim. (**Selector = app:backend**) Tek tek her seferinde Frontend podlarına Backend podlarının IP adreslerini eklemek zorunda kalmam!
 
-NodePort Service (Dış Dünya -> Container)
-–> Bu service tipi, Cluster dışından gelen bağlantıları çözmek için kullanılır.
+:tada: :tada: **Özetle: ClusterIP Service’i Container’ları arasındaki haberleşmeyi, Service Discovery ve Load Balancing görevi üstlenerek çözer!**\\
 
-–> NodePort key’i kullanılır.\
+***
+
+### NodePort Service (Dış Dünya -> Container)
+
+–> Bu service tipi, **Cluster dışından gelen bağlantıları** çözmek için kullanılır.
+
+–> `NodePort` key’i kullanılır.
 
 ![image](https://user-images.githubusercontent.com/103413194/184542656-4e79bd34-d1b9-45f4-8f32-bcfcb5abdeb1.png)
 
-LoadBalancer Service (Cloud Service’leri İçin)
-–> Bu service tipi, sadece Agent K8s, Google K8s Engine gibi yerlerde kullanılır.\
+### LoadBalancer Service (Cloud Service’leri İçin)
+
+–> Bu service tipi, sadece Agent K8s, Google K8s Engine gibi yerlerde kullanılır.
 
 ![image](https://user-images.githubusercontent.com/103413194/184542671-6ec1f693-7ba1-433d-b471-31f9eacd1f9c.png)
 
-ExternalName Service (Şuan için gereksiz.)
+
+
+### ExternalName Service (Şuan için gereksiz.)
 
 
 # 43. Service uygulama
 
 ### Cluster IP Örneği
 
+```shell
 apiVersion: v1
 kind: Service
 metadata:
@@ -1189,15 +1251,20 @@ spec:
     - protocol: TCP
       port: 5000
       targetPort: 5000
-Herhangi bir object, cluster içerisinde oluşan clusterIP:5000 e istek attığında karşılık bulacaktır.
+```
 
-Önemli Not: Service’lerin ismi oluşturulduğunda şu formatta olur: serviceName.namespaceName.svc.cluster.domain
+Herhangi bir object, cluster içerisinde oluşan `clusterIP:5000` e istek attığında karşılık bulacaktır.
 
-Eğer aynı namespace’de başka bir object bu servise gitmek istese core DNS çözümlemesi sayesinde direkt backend yazabilir. Başka bir namespaceden herhangi bir object ise ancak yukarıdaki uzun ismi kullanarak bu servise ulaşmalıdır.
+**Önemli Not:** Service’lerin ismi oluşturulduğunda şu formatta olur: `serviceName.namespaceName.svc.cluster.domain`
 
-NodePort Örneği
-Unutulmamalıdır ki, tüm oluşan NodePort servislerinin de ClusterIP’si mevcuttur. Yani, içeriden bu ClusterIP kullanılarak bu servisle konuşulabilir.
-minikube service –url <serviceName> ile minikube kullanırken tunnel açabiliriz. Çünkü, biz normalde bu worker node’un içerisine dışardan erişemiyoruz. Bu tamamen minikube ile alakalıdır.
+Eğer aynı namespace’de başka bir object bu servise gitmek istese core DNS çözümlemesi sayesinde direkt `backend` yazabilir. Başka bir namespaceden herhangi bir object ise ancak yukarıdaki **uzun ismi** kullanarak bu servise ulaşmalıdır.
+
+### NodePort Örneği
+
+* Unutulmamalıdır ki, tüm oluşan NodePort servislerinin de **ClusterIP’si** mevcuttur. Yani, içeriden bu ClusterIP kullanılarak bu servisle konuşulabilir.
+* **`minikube service –url <serviceName>`** ile minikube kullanırken tunnel açabiliriz. Çünkü, biz normalde bu worker node’un içerisine dışardan erişemiyoruz. _Bu tamamen minikube ile alakalıdır._
+
+```shell
 apiVersion: v1
 kind: Service
 metadata:
@@ -1210,9 +1277,13 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 80
-Load Balancer Örneği
+```
+
+### Load Balancer Örneği
+
 Google Cloud Service, Azure üzerinde oluşturulan cluster’larda çalışacak bir servistir.
 
+```shell
 apiVersion: v1
 kind: Service
 metadata:
@@ -1225,30 +1296,40 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 80
-Imperative Olarak Service Oluşturma
+```
+
+### Imperative Olarak Service Oluşturma
+
+```shell
 kubectl delete service <serviceName>
 
 # ClusterIP Service yaratmak
 kubectl expose deployment backend --type=ClusterIP --name=backend
 
 kubectl expose deployment backend --type=NodePort --name=backend
-Endpoint Nedir?
+```
+
+### Endpoint Nedir?
+
 Nasıl deployment’lar aslında ReplicaSet oluşturduysa, Service objectleride arka planda birer Endpoint oluşturur. Service’lerimize gelen isteklerin nereye yönleneceği Endpoint’ler ile belirlenir.
 
+```shell
 kubectl get endpoints
+```
+
 Bir pod silindiğinde yeni oluşacak pod için, yeni bir endpoint oluşturulur.
-
-# Liveness, Readiness, Resource Limits, Env. Variables
-
-	
-# ⚡ Volume, Secret, ConfigMap
 	
 # 44. Liveness probes
 
 Eğer container çalışmassa kubelet contaınerı kapatıp tekrar kuruyor. Fakat ayakta olmasına rağmen containerin görevini yerine getirmiyorsa kubelet bunu göremiyor. Doğal olarak containeri kapatıp yeniden açmayı denemiyor. Bu durumda liveless probes ile çözebiliyoruz.
 	
-	![image](https://user-images.githubusercontent.com/103413194/185057781-f4ca40d9-de1c-462d-a10f-df0d72ad7481.png)
+![image](https://user-images.githubusercontent.com/103413194/185057781-f4ca40d9-de1c-462d-a10f-df0d72ad7481.png)
 
+# http get request gönderelim.
+# eğer 200 ve üzeri cevap dönerse başarılı!
+# dönmezse kubelet container'ı yeniden başlatacak.
+
+```
 apiVersion: v1
 kind: Pod
 metadata:
@@ -1262,15 +1343,22 @@ spec:
     args:
     - /server
     livenessProbe:
-      httpGet:
-        path: /healthz
-        port: 8080
-        httpHeaders:
+      httpGet:	# get request'i gönderiyoruz.
+        path: /healthz # path tanımı
+        port: 8080 # port tanımı
+        httpHeaders: # get request'imize header eklemek istersek
         - name: Custom-Header
           value: Awesome
-      initialDelaySeconds: 3
-      periodSeconds: 3
+      initialDelaySeconds: 3 # uygulama hemen ayağa kalkmayabilir,
+      											 # çalıştıktan x sn sonra isteği gönder.
+      periodSeconds: 3 # kaç sn'de bir bu istek gönderilecek. 
+      								 # (healthcheck test sürekli yapılır.)
 ---
+```
+# uygulama içerisinde komut çalıştıralım.
+# eğer exit -1 sonucu alınırsa container baştan başlatılır.
+
+```
 apiVersion: v1
 kind: Pod
 metadata:
@@ -1286,13 +1374,15 @@ spec:
     - -c
     - touch /tmp/healthy; sleep 30; rm -rf /tmp/healthy; sleep 600
     livenessProbe:
-      exec:
+      exec:  			# komut çalıştırılır.
         command:
         - cat
         - /tmp/healthy
       initialDelaySeconds: 5
       periodSeconds: 5
 ---
+# tcp connection yaratalım. Eğer başarılıysa devam eder, yoksa 
+# container baştan başlatılır.
 apiVersion: v1
 kind: Pod
 metadata:
@@ -1305,21 +1395,42 @@ spec:
     image: k8s.gcr.io/goproxy:0.1
     ports:
     - containerPort: 8080
-    livenessProbe:
+    livenessProbe:	# tcp connection yaratılır.
       tcpSocket:
         port: 8080
       initialDelaySeconds: 15
       periodSeconds: 20
+```
 	
 # 45. Readiness probes
 
-	deployment ıle yeni imagelar ayaga kaldırdım. Bunlar oluşunca service-load balancer a baglanacak ve internet sıtemden gelen requestlere cevap verecek. eger contaıner calısıyorsa fakat ınternet sıtemı sunmaya hazır degılse ne olacak? veya load balancer servisinden trafik almaya hazır olduğunu nasıl anlayacağım. 
+Deployment ıle yeni imagelar ayaga kaldırdım. Bunlar oluşunca service-load balancer a baglanacak ve internet sıtemden gelen requestlere cevap verecek. eger contaıner calısıyorsa fakat ınternet sıtemı sunmaya hazır degılse ne olacak? veya load balancer servisinden trafik almaya hazır olduğunu nasıl anlayacağım. 
 
-	![image](https://user-images.githubusercontent.com/103413194/185067925-5fb05741-3fbe-4546-bd3b-db3a2e2b2a46.png)
+![image](https://user-images.githubusercontent.com/103413194/185067925-5fb05741-3fbe-4546-bd3b-db3a2e2b2a46.png)
 
-	![image](https://user-images.githubusercontent.com/103413194/185068817-857270fc-a4cb-4805-a353-393b53592f1b.png)
+![image](https://user-images.githubusercontent.com/103413194/185068817-857270fc-a4cb-4805-a353-393b53592f1b.png)
 
-	apiVersion: apps/v1
+	
+#### **Örnek Senaryo**
+
+3 podumuz ve 1 LoadBalancer service’imiz var. Bir güncelleme yaptık; yeni bir image oluşturduk. Eski podlar devreden çıktı, yenileri alındı. Yenileri alındığından itibaren LoadBalancer gelen trafiği yönlendirmeye başlayacaktır. Peki, benim uygulamalarım ilk açıldığında bir yere bağlanıp bir data çekip, bunu işliyor ve sonra çalışmaya başlıyorsa? Bu süre zarfında gelen requestler doğru cevaplanamayacaktır. Kısacası, uygulamamız çalışıyor ama hizmet sunmaya hazır değil.
+
+–> **Kubelet,** bir containerın ne zaman trafiği kabul etmeye (Initial status) hazır olduğunu bilmek için **Readiness Probes** kullanır. Bir Poddaki tüm container’lar Readiness Probes kontrolünden onay alırsa **Service Pod’un arkasına eklenir.**
+
+Yukarıdaki örnekte, yeni image’lar oluşturulurken eski Pod’lar hemen **terminate** edilmez. Çünkü, içerisinde daha önceden alınmış istekler ve bu istekleri işlemek için yürütülen işlemler olabilir. Bu sebeple, k8s önce bu Pod’un service ile ilişkisini keser ve yeni istekler almasını engeller. İçerideki mevcut isteklerinde sonlanmasını bekler.
+
+`terminationGracePeriodSconds: 30` –> Mevcut işlemler biter, 30 sn bekler ve kapanır. (_30sn default ayardır, gayet yeterlidir._)
+
+**–> Readiness ile Liveness arasındaki fark, Readiness ilk çalışma anını baz alırken, Liveness sürekli çalışıp çalışmadığını kontrol eder.**
+
+> Örneğin; Backend’in ilk açılışta MongoDB’ye bağlanması için geçen bir süre vardır. MongoDB bağlantısı sağlandıktan sonraPod’un arkasına Service eklenmesi mantıklıdır. **Bu sebeple, burada readiness’i kullanabiliriz.**
+
+Aynı Liveness’ta olduğu gibi 3 farklı yöntem vardır:
+
+* **http/get**, **tcp connection** ve **command çalıştırma**.
+
+```shell
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
@@ -1348,10 +1459,11 @@ spec:
           periodSeconds: 5
         readinessProbe:
           httpGet:
-            path: /ready
+            path: /ready	# Bu endpoint'e istek atılır, OK dönerse uygulama çalıştırılır.
             port: 80
-          initialDelaySeconds: 20
-          periodSeconds: 3
+          initialDelaySeconds: 20 # Başlangıçtan 20 sn gecikmeden sonra ilk kontrol yapılır.
+          periodSeconds: 3 # 3sn'de bir denemeye devam eder.
+          terminationGracePeriodSconds: 50 # Yukarıda yazıldı açıklaması.
 ---
 apiVersion: v1
 kind: Service
@@ -1364,12 +1476,26 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 80
+```
 	
 # 46. Resource limits
 	
-	containerimızı bir namespacenin içine kurduk. Eğer containerin memory ve cpu suna bir sınırlama getirmezsek namespace simizin tüm kaynağını kullanacaktır. 
-	bundan dolayı request(istenilen) ve limits(kullanabileceği son seviye) kriterleri belirleriz. Eğer memory belırlenen limite gelirse bunu gecemiyeceğinden yeniden pod oluşturulacaktır.
-	
+* Containerimızı bir namespacenin içine kurduk. Eğer containerin memory ve cpu suna bir sınırlama getirmezsek namespace simizin tüm kaynağını kullanacaktır. 
+* Bundan dolayı request(istenilen) ve limits(kullanabileceği son seviye) kriterleri belirleriz. Eğer memory belırlenen limite gelirse bunu gecemiyeceğinden yeniden pod oluşturulacaktır.
+
+* Pod’ların CPU ve Memory kısıtlamalarını yönetmemizi sağlar. Aksini belirtmediğimiz sürece K8s üzerinde çalıştığı makinenin CPU ve Memory’sini %100 kullanabilir. Bu durum bir sorun oluşturur. Bu sebeple Pod’ların ne kadar CPU ve Memory kullanacağını belirtebiliriz.
+
+### CPU Tanımı
+
+![](<.gitbook/assets/image (25).png>)
+
+### Memory Tanımı
+
+![](.gitbook/assets/image-20211230020644173.png)
+
+### YAML Dosyasında Tanım
+
+```shell
 apiVersion: v1
 kind: Pod
 metadata:
@@ -1381,22 +1507,31 @@ spec:
   - name: requestlimit
     image: ozgurozturknet/stress
     resources:
-      requests:
-        memory: "64M"
-        cpu: "250m"
-      limits:
+      requests: # Podun çalışması için en az gereken gereksinim
+        memory: "64M"	# Bu podu en az 64M 250m (yani çeyrek core)
+        cpu: "250m" # = Çeyrek CPU core = "0.25"
+      limits: # Podun çalışması için en fazla gereken limit
         memory: "256M"
-        cpu: "0.5"
+        cpu: "0.5" # = "Yarım CPU Core" = "500m"
+```
 
-![image](https://user-images.githubusercontent.com/103413194/185073755-ffcc6220-1b37-43bf-8556-9b95114b5cc5.png)
+–> Eğer gereksinimler sağlanamazsa **container oluşturulamaz.**
 
-![image](https://user-images.githubusercontent.com/103413194/185073807-a9079974-02fe-493d-a465-4f840932fb15.png)
+–> Memory, CPU’ya göre farklı çalışıyor. K8s içerisinde memory’nin limitlerden fazla değer istediğinde engellemesi gibi bir durum yok. Eğer memory, limitlerden fazlasına ihtiyaç duyarsa “OOMKilled” durumuna geçerek pod restart edilir.
 
-#	47. Environment variable
+> **Araştırma konusu:** Bir pod’un limitlerini ve min. gereksinimlerini neye göre belirlemeliyiz?
 
-Environment variables uygulamamızın kodu dışında bulunur, uygulamamızın çalıştığı yerde kullanılabilir. Uygulamalarımızın yapılandırmasını kodundan ayırmak için kullanılabilir, bu da uygulamalarımızın farklı ortamlara kolayca dağıtılmasını sağlar. Node.js uygulamalarında, ortam değişkenleri process.env genel değişkeni aracılığıyla kullanılabilir. .Env dosyası hiçbir zaman kaynak kodu deposunda olmamalıdır.
+
+# 47. Environment variable
+
+Environment variables uygulamamızın kodu dışında bulunur, uygulamamızın çalıştığı yerde kullanilabilir. Uygulamalarımızın yapılandırmasını kodundan ayırmak için kullanılabilir, bu da uygulamalarımızın farklı ortamlara kolayca dağıtılmasını sağlar. Node.js uygulamalarında, ortam değişkenleri process.env genel değişkeni aracılığıyla kullanılabilir. .Env dosyası hiçbir zaman kaynak kodu deposunda olmamalıdır.
 Environment variables ımage hard code olarak gömmeyız. container oluştururken env bölümü altında bunları tanımlarız.
 	
+Örneğin, bir node.js sunucusu oluşturduğumuzu ve veritabanı bilgilerini sunucu dosyaları içerisinde sakladığımızı düşünelim. Eğer, sunucu dosyalarından oluşturduğumuz container image’ı başka birisinin eline geçerse büyük bir güvenlik açığı meydana gelir. Bu sebeple **Environment Variables** kullanmamız gerekir.
+
+### YAML Tanımlaması
+
+```shell
 apiVersion: v1
 kind: Pod
 metadata:
@@ -1410,10 +1545,33 @@ spec:
     ports:
     - containerPort: 80
     env:
-      - name: USER
-        value: "Ozgur"
+      - name: USER   # önce name'ini giriyoruz.
+        value: "Ozgur"  # sonra value'sunu giriyoruz.
       - name: database
         value: "testdb.example.com"
+```
+
+### Pod içinde tanımlanmış Env. Var.’ları Görmek
+
+```shell
+kubectl exec <podName> -- printenv
+```
+
+## Port-Forward (Local -> Pod)
+
+–> Kendi local sunucularımızdan istediğimiz k8s cluster’ı içerisindeki object’lere direkt ulaşabilmek için **port-forward** açabiliriz. Bu object’i test etmek için en iyi yöntemlerden biridir.
+
+```shell
+kubectl port-forward <objectType>/<podName> <localMachinePort>:<podPort>
+
+kubectl port-forward pod/envpod 8080:80
+# Benim cihazımdaki 8080 portuna gelen tüm istekleri,bu podun 80 portuna gönder.
+
+curl 127.0.0.1:8080
+# Test için yazabilirsin.
+```
+
+_CMD + C yapıldığında port-forwarding sona erer.
 	
 ![image](https://user-images.githubusercontent.com/103413194/185083812-facb0cc7-243f-48fe-a061-7dd0d9debde4.png)
 
@@ -1431,7 +1589,7 @@ spec:
 
 ### emptyDir Volume
 
-![](.gitbook/assets/image-20220101232209717.png)
+![image](https://user-images.githubusercontent.com/103413194/185383714-92c1418f-77e3-4e3f-9c2d-bd76462e6b23.png)
 
 ```yaml
 apiVersion: v1
@@ -1474,7 +1632,7 @@ spec:
   * **DirectoryOrCreate** –> Zaten var olan klasörler ya da bu klasör yoksa yaratılması için kullanılır.
   * **FileOrCreate** –> Klasör değil! Tek bir dosya için kullanılır. Yoksa yaratılır.
 
-![](.gitbook/assets/image-20220101232320593.png)
+![image](https://user-images.githubusercontent.com/103413194/185383793-0d817b3c-5765-4752-bb27-9ef27613e2ca.png)
 
 ```yaml
 apiVersion: v1
@@ -1525,17 +1683,20 @@ spec:
 
 ![image](https://user-images.githubusercontent.com/103413194/184619377-38df4602-a948-42a8-8ef7-825dfe7faa74.png)
 	
-	![image](https://user-images.githubusercontent.com/103413194/184619600-669203cd-ad0e-4a93-9fe9-bfba71961697.png)
+![image](https://user-images.githubusercontent.com/103413194/184619600-669203cd-ad0e-4a93-9fe9-bfba71961697.png)
 	
 ![image](https://user-images.githubusercontent.com/103413194/184632990-f37a5574-b3a8-48b8-9eae-8bfc96d5847e.png)
+
 
 ### Birinci dosyanın yerine 2. dosyayı yazmış oluyoruz. Amaç hassas bilgileri korumak.
 ### Declarative Secret Oluşturma
 
+
 * Atayacağımız secret ile oluşturacağımız pod’lar **aynı namespace üzerinde olmalıdır.**
 * 8 farklı tipte secret oluşturabiliriz. **`Opaque`** generic bir type’dır ve hemen hemen her hassas datamızı bu tipi kullanarak saklayabiliriz.
+* 
 	
-	![image](https://user-images.githubusercontent.com/103413194/184633752-04949cc4-0157-429f-90dd-68245a71eeee.png)
+![image](https://user-images.githubusercontent.com/103413194/184633752-04949cc4-0157-429f-90dd-68245a71eeee.png)
 
 dosyayı nereden aldığını görüyoruz.
 
@@ -1577,8 +1738,8 @@ kubectl create secret generic <secretName> --from-file=db_server=server.txt --fr
 kubectl create secret generic <secretName> --from-file=config.json
 ```
 burada config.json key in adı ve dosyanın içindeki de value sı oluyor.
-Json örneği:
 
+Json örneği:
 ```yaml
 {
    "apiKey": "6bba108d4b2212f2c30c71dfa279e1f77cc5c3b2",
@@ -1663,10 +1824,10 @@ kubectl exec <podName> -- printenv
 * Pod içerisine **Volume** veya **Env. Variables** olarak tanımlayabiliriz.
 * Oluşturulma yöntemleri Secret ile aynı olduğundan yukarıdaki komutlar geçerlidir.
 
-	![image](https://user-images.githubusercontent.com/103413194/184618994-d77e558b-7a55-4c96-b6b5-9caece1dbd17.png)
+![image](https://user-images.githubusercontent.com/103413194/184618994-d77e558b-7a55-4c96-b6b5-9caece1dbd17.png)
 
 
-	![image](https://user-images.githubusercontent.com/103413194/184619084-3bb761bc-e73a-4f90-82cf-23978c7c4cbb.png)
+![image](https://user-images.githubusercontent.com/103413194/184619084-3bb761bc-e73a-4f90-82cf-23978c7c4cbb.png)
 
 ```yaml
 apiVersion: v1
@@ -1806,6 +1967,7 @@ spec:
 	
 ![image](https://user-images.githubusercontent.com/103413194/184653159-07ee616e-bf58-4a44-9b72-ef6f7c81f2bb.png)
 
+```
 apiVersion: v1
 kind: Pod
 metadata:
@@ -1865,6 +2027,7 @@ spec:
         - matchExpressions:
           - key: app
             operator: Exists #In, NotIn, Exists, DoesNotExist
+```
 
 affinity pod un altındaki spec kısmında olusturulur. 
 **requiredDuringSchedulingIgnoredDuringExecution**
@@ -1878,27 +2041,32 @@ operator de ise node selector den ayrışmamızı ve daha fazla iş yapabilmemiz
 Örneğin operatorde **Exists** yazıyorsa (key: app ) labela da olmamasi gerekir.
 	
 **preferredDuringSchedulingIgnoredDuringExecution:**
-weight degerine göre öncelik oluşuyor. Weight 1 ile 100 arasında değer alıyor. değeri yüksek olan oluşuyor. 
-Yukarıdaki yaml dosyasından yola çıkarsak pod, weight 2 deki key ve value değerlerini sağlayan node da oluşturulacak eğer böyle bir node yoksa weight 1 deki key ve value değerlerine bakacak. Eğer onu da bulamazsa herhangi bir node da oluşturacak.
+* weight degerine göre öncelik oluşuyor. Weight 1 ile 100 arasında değer alıyor. değeri yüksek olan oluşuyor.
+
+* Yukarıdaki yaml dosyasından yola çıkarsak pod, weight 2 deki key ve value değerlerini sağlayan node da oluşturulacak eğer böyle bir node yoksa weight 1 deki key ve value değerlerine bakacak. Eğer onu da bulamazsa herhangi bir node da oluşturacak.
+
+
 **preferredDuringSchedulingIgnoredDuringExecution:** ifadesinin içindeki IgnoreDuringExecution aslında pod oluşturulduktan sonra nodeworker daki label değişse de pod un çalışmaya devam etmesi anlamına geliyor.
-Not: Yaml dosyasında 1. pod sadece key ve value değerini sağlıyorsa oluşacak. 2. pod her kriterlere göre her halükarda oluşacak ve 3. pod operator kısmı Exist olarak tanımlı olduğu için nodeworker da label da key:app olarak tanımlıysa oluşacak.
+
+👌 Yaml dosyasında 1. pod sadece key ve value değerini sağlıyorsa oluşacak. 2. pod her kriterlere göre her halükarda oluşacak ve 3. pod operator kısmı Exist olarak tanımlı olduğu için nodeworker da label da key:app olarak tanımlıysa oluşacak.
 	
-Not2: Bu durumda sadece 2. pod oluşur.
+👌 Bu durumda sadece 2. pod oluşur.
 	
 ![image](https://user-images.githubusercontent.com/103413194/185093686-6228bc7c-a606-45a0-a4d6-3c3360f298c9.png)
 
 komutunu yazarsam 1. ve 3. pod da çalışacaktır.
 	
-52. Pod Affinity
+# 52. Pod Affinity
 	
 Eğer biz podu hangi kriterlere sahip node üzerinde oluşturmamızı belirleyeceksek nodeaffinity yi kullanırız. Fakat eğer biz pod u oluştururken diğer podları da kriter olarak kabul ediyorsak o zaman podaffinity i kullanmalıyız.
 	
-	![image](https://user-images.githubusercontent.com/103413194/185098987-e3adcd6a-5ac3-431a-a869-6e723370a8b5.png)
+![image](https://user-images.githubusercontent.com/103413194/185098987-e3adcd6a-5ac3-431a-a869-6e723370a8b5.png)
 
-Bu kurgudan yola çıkarsak, frondend ve database  farklı az lerde oluşmuş. bu ücretlendirilen bir durum. Bunun çözümü ben komut olarak git database hangi az de ise veya worknode da oluşturulduysa frondend orada oluştur.
+👌 Bu kurgudan yola çıkarsak, frondend ve database  farklı AZ lerde oluşmuş. bu ücretlendirilen bir durum. Bunun çözümü olarak database hangi AZ de ise  worknode ve frondend orada oluştur.
 	
 ![image](https://user-images.githubusercontent.com/103413194/185099636-569f3766-a29f-48f2-b147-68e2dc852eec.png)
 
+```
 apiVersion: v1
 kind: Pod
 metadata:
@@ -1952,45 +2120,47 @@ spec:
   containers:
   - name: cachecontainer
     image: redis:6-alpine
-	
+```
 
-pod frontendpod da topologkey e bakıldıgında hostnamesi(nodeworker) aynı olan yerde çalıştırılacak.
+* pod frontendpod da topologkey e bakıldıgında hostnamesi(nodeworker) aynı olan yerde çalıştırılacak.
 	
-podantıaffınıty de ise şunu diyoruz: key:deployment ve value:prod olan zone içerisinde çalıştırma. başka bir yerde çalıştır.
+* podantıaffınıty de ise şunu diyoruz: key:deployment ve value:prod olan zone içerisinde çalıştırma. başka bir yerde çalıştır.
 	
 # 53. Taint ve Toleration
 	
 taint ve toleration kavramları node ların pod seçmesini sağlamaktadır.
 
+```
 kubectl taint nodes <node-name> key=value:taint-effect
 kubectl taint nodes minikube platform=production:NoSchedule
+```
 	
-kubectl taint nodes minikube platform- 
-
-komutu ile tainte silebiliyorum.
+`kubectl taint nodes minikube platform- `
+komutu ile tainte silebiliyorum
 
 Taint tanımlanırken dikkat edilmesi gereken 2 şey vardır biri key-value lerin düzgün yazılıp yazılmadığı diğeri ise taint effect in istenilen şekilde kullanılıp kulanılmadığıdır..
 
-Taint effect’in 3 farklı türü vardır.
+**Taint effect’in 3 farklı türü vardır.**
 	
-Bunlar NoSchedule PreferNoSchedule ve NoExecute
+Bunlar: **1. NoSchedule, 2.PreferNoSchedule ve 3. NoExecute**
 
-NoSchedule da tolerationu node un taint i ile uyuşmayan podlar o poda sokulmaz
+👌 1. **NoSchedule** da tolerationu node un taint i ile uyuşmayan podlar o poda sokulmaz.
 
-PreferNoSchedule da ise bu durum kesin değildir. Yani tolerationu node un taintine uyuşmayan podlar node a dahil edilmemeye çalışılsa da bu garanti edilmez.
+👌 2. **PreferNoSchedule** da ise bu durum kesin değildir. Yani tolerationu node un taintine uyuşmayan podlar node a dahil edilmemeye çalışılsa da bu garanti edilmez.
 
-NoExecute da içinde bulunan podlar içinde taint toleration uyuşmazlığı varsa o podlar dışarı atılır. Örneğin Node 1 in tainti mavi yapılmadan önce A B C D podları node 1 in içinde olsaydı, taintin mavi yapılması işleminden sonra node1 in içinde sadece D podu kalacaktı. Diğer podlar dışarı atılacaktı.
+👌 3. **NoExecute**  da içinde bulunan podlar içinde taint toleration uyuşmazlığı varsa o podlar dışarı atılır. Örneğin Node 1 in tainti mavi yapılmadan önce A B C D podları node 1 in içinde olsaydı, taintin mavi yapılması işleminden sonra node1 in içinde sadece D podu kalacaktı. Diğer podlar dışarı atılacaktı.
 
-	![image](https://user-images.githubusercontent.com/103413194/185172448-6fa12340-a00b-4c0a-93a2-e45975b0e35f.png)
+![image](https://user-images.githubusercontent.com/103413194/185172448-6fa12340-a00b-4c0a-93a2-e45975b0e35f.png)
 
 burada bir tane container nginx imajından ve terminate edildiğinde container tekrar başlatılmayacak.
 	
 ![image](https://user-images.githubusercontent.com/103413194/185168147-acce9937-d961-4028-b872-7cc8d05bfbf7.png)
 
-**NOT1** : Bir pod u istedigimiz node da calıştırmak istiyorsak o zaman node da ki key ve value değerlerini operator e yazılacak değişkeni de dikkate alarak node ve podaffinity ile halledebiliriz. Bu node larda başka podlarda çalışabilir. key ve value değerleri farklı olan. affinity ile aslında bir pod un nerede ve hangi kriterlere göre schedule edileceği belirlenir.
+**Not1** : Bir pod u istedigimiz node da calıştırmak istiyorsak o zaman node da ki key ve value değerlerini operator e yazılacak değişkeni de dikkate alarak node ve podaffinity ile halledebiliriz. Bu node larda başka podlarda çalışabilir. key ve value değerleri farklı olan. affinity ile aslında bir pod un nerede ve hangi kriterlere göre schedule edileceği belirlenir.
 
-**NOT1** : Eğer node un içinde benim belirlediğim kriterlere göre pod konumlandırmak istiyorsam o zaman taint ve toleration kullanmalıyım.
+**Not2** : Eğer node un içinde benim belirlediğim kriterlere göre pod konumlandırmak istiyorsam o zaman taint ve toleration kullanmalıyım.
 
+```
 apiVersion: v1
 kind: Pod
 metadata:
@@ -2022,18 +2192,19 @@ spec:
     operator: "Exists"
     effect: "NoSchedule"
 	
+```
 
 ![image](https://user-images.githubusercontent.com/103413194/185174451-884f2dda-5f47-4631-9554-33ba0cb521a0.png)
 
-color=blue uyuşmayan schedule etme ve aynı zamanda buna uymayan podları da sil.
+* yani color=blue uyuşmayan schedule etme ve aynı zamanda buna uymayan podları da sil.
 	
 # 54. DaemonSet
 	
-bu obje dışarıya aktarmak veya takip etmek istediğim loglar veya monitor için genellikle kullanılır.
+bu obje loglari vb. dışarıya aktarmak veya takip etmek istediğim loglar veya monitor için genellikle kullanılır.
 
 ![image](https://user-images.githubusercontent.com/103413194/185180637-61d8ebcb-dff6-4b4b-ab89-963cef452ebb.png)
 
----
+```
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -2077,40 +2248,42 @@ spec:
       - name: varlibdockercontainers
         hostPath:
           path: /var/lib/docker/containers
----
+```
 	
-minikube node add 
+`minikube node add`
 komutuyla yeni bir node ekleyebiliyoruz.
 	
 # 55. Persistent Volume ve Persistent Volume Claim
 	
-Clusterımızın dışında bir volume oluşturup onu podumuza baglamamız gerekiyor ki volumemuızın yaşam süresi poddan uzun olsun.
+🗼 Clusterımızın dışında bir volume oluşturup onu podumuza baglamamız gerekiyor ki volumemızın yaşam süresi poddan uzun olsun.
 
-	![image](https://user-images.githubusercontent.com/103413194/185192393-99e3f9fc-bca5-4445-b746-cb2015c70267.png)
+![image](https://user-images.githubusercontent.com/103413194/185192393-99e3f9fc-bca5-4445-b746-cb2015c70267.png)
 
-	![image](https://user-images.githubusercontent.com/103413194/185193226-270fd520-10eb-440f-b000-f171334d22a5.png)
+![image](https://user-images.githubusercontent.com/103413194/185193226-270fd520-10eb-440f-b000-f171334d22a5.png)
 
-	![image](https://user-images.githubusercontent.com/103413194/185193347-e0f7b539-5de1-4f76-a878-525c4bfd1e06.png)
+![image](https://user-images.githubusercontent.com/103413194/185193347-e0f7b539-5de1-4f76-a878-525c4bfd1e06.png)
 	
-persistentvolume de volume ile işimiz bitince ona nasıl davranacağımızı belirliyoruz. 3 secenek var.
+persistentvolume de volume ile işimiz bitince ona nasıl davranacağımızı belirliyoruz. **3 secenek var.**
 
-1. Retain : volume aynı şekilde kalıyor. içindeki dosyaları manuel olarak başka bir yere taşıyabiliyoruz.
+**1. Retain :** volume aynı şekilde kalıyor. içindeki dosyaları manuel olarak başka bir yere taşıyabiliyoruz.
 
-2. Recycle: volume kalıyor ama içindeki dosyalar siliniyor. Doğal olarak veriye ulaşamıyoruz ama volume alanını tekrar kullanabiliyoruz.
+**2. Recycle:** volume kalıyor ama içindeki dosyalar siliniyor. Doğal olarak veriye ulaşamıyoruz ama volume alanını tekrar kullanabiliyoruz.
 
-3. Delete: volume tamamen siliyor.
+**3. Delete:** volume tamamen siliyor.
 	
-NOT : Volume oluşturdum. Fakat direk buna pod bağlayamıyorum. bunun için bir tane de persistent volume claim oluşturuyorum.
+**Not :** Volume oluşturdum. Fakat direk buna pod bağlayamıyorum. bunun için bir tane de persistent volume claim oluşturuyorum.
 	
 ![image](https://user-images.githubusercontent.com/103413194/185195832-de1ad1ad-d1d4-412a-a87a-0b910a645c8c.png)
 
 peki podu volume nasıl bağlayacagız.
 
-	![image](https://user-images.githubusercontent.com/103413194/185196490-477246cc-16b0-489b-a78d-6a2cde80afb2.png)
+
+![image](https://user-images.githubusercontent.com/103413194/185196490-477246cc-16b0-489b-a78d-6a2cde80afb2.png)
 
 	
 # 56. PV ve PVC uygulama
 	
+```
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -2126,12 +2299,14 @@ spec:
   nfs:
     path: /
     server: 10.255.255.10
+  ```
 	
-burada bir tane persistvolume oluşturuyoruz. bunu aslında sıstem kurucu oluşturuyor.
+Burada bir tane persistvolume oluşturuyoruz. bunu aslında sıstem kurucu oluşturuyor.
 	
-daha sonra bir tane persistentvolumeclaim oluşturuyoruz.
+Daha sonra bir tane persistentvolumeclaim oluşturuyoruz.
 
-	apiVersion: v1
+```
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mysqlclaim
@@ -2146,6 +2321,7 @@ spec:
   selector:
     matchLabels:
       app: "mysql"
+ ```
 	
 Burada matchlabels uzeridnen bound oluyor. bunu şu şekilde görebiliyoruz.
 
@@ -2153,6 +2329,7 @@ Burada matchlabels uzeridnen bound oluyor. bunu şu şekilde görebiliyoruz.
 
 peki bunu poda nasıl bağlayacağız.
 	
+```
 apiVersion: v1
 kind: Secret
 metadata:
@@ -2197,7 +2374,7 @@ spec:
         - name: mysqlvolume
           persistentVolumeClaim:
             claimName: mysqlclaim
-
+```
 
 # 57. Storage class
 
