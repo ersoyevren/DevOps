@@ -196,9 +196,6 @@ minikube stop
 
 ## Kubectl
 
-![](<.gitbook/assets/Screen Shot 2021-12-12 at 23.53.55.png>)
-
-
 * kubectl ile mevcut cluster’ı yönetimini **config** dosyası üzerinden yapmamız gerekir. Minikube gibi tool’lar config dosyalarını otomatik olarak oluşturur.
 * **Default config** dosyasına `nano ~/.kube/config` yazarak ulaşabiliriz.
 * VSCode’da açmak için
@@ -323,7 +320,7 @@ if [ -z "$1" ]
   then
     echo -e "\n##### No argument supplied. Please select one of these configs. #####"
     ls  ~/.kube |grep config- | cut -d "-" -f 2
-    echo -e "######################################################################\n"
+    echo -e "\n"
     #array=($(ls -d * |grep config_))
     read -p 'Please set config file: ' config
     cp -r ~/.kube/config_$config ~/.kube/config
@@ -668,14 +665,12 @@ spec:
 
 # 33. Label ve selector
 
-## 🏷 Label, Selector, Annotation
-
 ## Label Nedir?
 
 * Label -> Etiket
 * Selector -> Etiket Seçme
 
-ÖR: `example.com/tier:front-end` –>`example.com/` = Prefix (optional) `tier` = **key**, `front-end` = **value**
+**Örnek:** `example.com/tier:front-end` –>`example.com/` = Prefix (optional) `tier` = **key**, `front-end` = **value**
 
 * `kubernetes.io/`ve `k8s.io/` Kubernetes core bileşenler için ayrılmıştır, kullanılamazdır.
 * Tire, alt çizgi, noktalar içerebilir.
@@ -700,14 +695,13 @@ metadata:
   labels:
     app: berk # app key burada. berk ise value'su.
     tier: backend # tier başka bir key, backend value'su.
-...
-
+```
 ![image](https://user-images.githubusercontent.com/103413194/184532721-92694678-8432-4a93-9c87-2947a57f9b36.png)
 
 labels ları kullanarak arama yapabiliyoruz.
 ---
 obje oluştururken yamlın içinde obje yamlarının arasında --- koyarsak yeni bir obje oluşturabiliriz.
-```
+
 
 ![image](https://user-images.githubusercontent.com/103413194/184532768-38c3193e-f8bb-4596-a6db-22dad5388287.png)
 
@@ -1325,9 +1319,10 @@ Eğer container çalışmassa kubelet contaınerı kapatıp tekrar kuruyor. Faka
 	
 ![image](https://user-images.githubusercontent.com/103413194/185057781-f4ca40d9-de1c-462d-a10f-df0d72ad7481.png)
 
-# http get request gönderelim.
-# eğer 200 ve üzeri cevap dönerse başarılı!
-# dönmezse kubelet container'ı yeniden başlatacak.
+
+* http get request gönderelim.
+* eğer 200 ve üzeri cevap dönerse başarılı!
+* dönmezse kubelet container'ı yeniden başlatacak.
 
 ```
 apiVersion: v1
@@ -1353,10 +1348,9 @@ spec:
       											 # çalıştıktan x sn sonra isteği gönder.
       periodSeconds: 3 # kaç sn'de bir bu istek gönderilecek. 
       								 # (healthcheck test sürekli yapılır.)
----
 ```
-# uygulama içerisinde komut çalıştıralım.
-# eğer exit -1 sonucu alınırsa container baştan başlatılır.
+🎉 uygulama içerisinde komut çalıştıralım.
+🎉 eğer exit -1 sonucu alınırsa container baştan başlatılır.
 
 ```
 apiVersion: v1
@@ -1688,7 +1682,8 @@ spec:
 ![image](https://user-images.githubusercontent.com/103413194/184632990-f37a5574-b3a8-48b8-9eae-8bfc96d5847e.png)
 
 
-### Birinci dosyanın yerine 2. dosyayı yazmış oluyoruz. Amaç hassas bilgileri korumak.
+* Birinci dosyanın yerine 2. dosyayı yazmış oluyoruz. Amaç hassas bilgileri korumak.
+* 
 ### Declarative Secret Oluşturma
 
 
@@ -2030,11 +2025,13 @@ spec:
 ```
 
 affinity pod un altındaki spec kısmında olusturulur. 
+
 **requiredDuringSchedulingIgnoredDuringExecution**
-	
-podaffinity de amaç belirlenen (örneğin key: app ve values: blue) anahtarı nodun labelında arar. varsa o nodun altında podu oluşturur yoksa oluşturmaz.
-operator de ise node selector den ayrışmamızı ve daha fazla iş yapabilmemizi sağlıyor. 
-	operatorde #In, NotIn, Exists, DoesNotExist
+* podaffinity de amaç belirlenen (örneğin key: app ve values: blue) anahtarı nodun labelında arar. varsa o nodun altında podu oluşturur yoksa oluşturmaz.
+
+* operator de ise node selector den ayrışmamızı ve daha fazla iş yapabilmemizi sağlıyor. 
+
+* operatorde #In, NotIn, Exists, DoesNotExist
 Örneğin operatorde **In**  yazıyorsa (key: app ve values: blue) labela sahıp node da schedule edıyor.
 Örneğin operatorde **NotIn** yazıyorsa (key: app ve values: blue) labela **sahip olmayan** node da schedule edıyor. buna unaffinity denir.
 Örneğin operatorde **Exists** yazıyorsa (key: app ) labela da olmasi yeterli olacakti.
@@ -2378,8 +2375,798 @@ spec:
 
 # 57. Storage class
 
+* Dinamik olarak bir volume ihtiyacim var. Persistentvolume olusturmak ve storage ayarlamak zor ve statik bir durum. Bunun yerine dinamik ve kolay bir volume ihtiyacimiz var. Bunu storage class olarak adlandiriyoruz.
+
+![image](https://user-images.githubusercontent.com/103413194/185395610-4db0bb37-2f0d-4153-9a0f-dfa182fcdba0.png)
+
+```
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: standarddisk
+parameters:
+  cachingmode: ReadOnly
+  kind: Managed
+  storageaccounttype: StandardSSD_LRS
+provisioner: kubernetes.io/azure-disk
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+```
+
+sc adli dosyayi olusturuyoruz ve standarddisk adinda bir storageclasses olustu.
+
+![image](https://user-images.githubusercontent.com/103413194/185396959-e9e1faf5-9778-432d-851d-c7645607f476.png)
+
+Resimdeki **waitforfirstconsumer**, volume herhangi bir yere baglanana kadar olusturulmayacak demektir. **immediate** ise PVC olusturulunca hemen olusuyor.
+
+```
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysqlclaim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: "standarddisk"
+```
+* Bu sekilde bir tane PVC olusturuyorum. onceki PVC den farki StorageClassName yi kullaniyorum ve olusturdugum standarddisk e bagliyorum.
+
+
+```
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysqlsecret
+type: Opaque
+stringData:
+  password: P@ssw0rd!
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysqldeployment
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - mountPath: "/var/lib/mysql"
+              name: mysqlvolume
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysqlsecret
+                  key: password
+      volumes:
+        - name: mysqlvolume
+          persistentVolumeClaim:
+            claimName: mysqlclaim
+```
+
+**ACIKLAMA** : Burada mysqlclaim adinda bir volumeden olusturulmak uzere bir volume(pv) talep ediyoruz. Bu volume mysqlvolume adinda "/var/lib/mysql" dosyasinin aldinta mountPath oluyor.
+
+![image](https://user-images.githubusercontent.com/103413194/185399494-ee9abe78-f4f0-4f86-953d-7e745b024c06.png)
+
+
+resimde de goruldugu uzere mysqlclaim bound oluyor pvc-... adindaki pv ye. resmin alt tarafinda da pv nin ozellikleri gorunuyor.
+
+
+# 58. StatefulSet
+
+## Kubernetes statefulset nedir? Neden böyle bir yapıya ihtiyaç duyulmuştur?
+
+* Deployment ve ReplicationController durum bilgisi olmayan uygulamalarda kullanılır. StatefulSet, durum bilgisi olan uygulamaları yönetmek için kullanılan iş yükü API nesnesidir. Bir Pod setinin dağıtımını ve ölçeklendirmesini yönetir ve bu Pod'ların sıralanması ve benzersizliği hakkında garantiler sağlar. StatefulSet aynı zamanda bir denetleyicidir ancak Deployment’tan farklı olarak ReplicaSet oluşturmaz, benzersiz bir adlandırma kuralıyla Pod'u kendisi oluşturur. Bu nedenle bir StatefulSet'i önceki bir sürüme geri alamazsınız. Yalnızca Statefulset'i silebilir veya büyütebilir/azaltabilirsiniz.
+
+* StatefulSets, Pod'larının kimliği ve sıralaması için sıralı bir dizin kullanır. Varsayılan olarak, StatefulSet Pod'ları oluşturuldukları sırada deploy eder ve ters sırada sonlandırılır.
+
+![image](https://user-images.githubusercontent.com/103413194/185422538-ff4876cd-46f6-4252-a285-d3c1e78b571e.png)
+
+![image](https://user-images.githubusercontent.com/103413194/185423573-96b49b0c-f23e-4c24-980a-f2ac21bb1c7a.png)
+
+![image](https://user-images.githubusercontent.com/103413194/185423738-1e23baab-69ae-4792-a5ca-0711e22e5e10.png)
+
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: cassandra
+  name: cassandra
+spec:
+  clusterIP: None
+  ports:
+  - port: 9042
+  selector:
+    app: cassandra
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cassandra
+  labels:
+    app: cassandra
+spec:
+  serviceName: cassandra
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cassandra
+  template:
+    metadata:
+      labels:
+        app: cassandra
+    spec:
+      terminationGracePeriodSeconds: 1800
+      containers:
+      - name: cassandra
+        image: gcr.io/google-samples/cassandra:v13
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 7000
+          name: intra-node
+        - containerPort: 7001
+          name: tls-intra-node
+        - containerPort: 7199
+          name: jmx
+        - containerPort: 9042
+          name: cql
+        resources:
+          limits:
+            cpu: "500m"
+            memory: 1Gi
+          requests:
+            cpu: "500m"
+            memory: 1Gi
+        securityContext:
+          capabilities:
+            add:
+              - IPC_LOCK
+        lifecycle:
+          preStop:
+            exec:
+              command: 
+              - /bin/sh
+              - -c
+              - nodetool drain
+        env:
+          - name: MAX_HEAP_SIZE
+            value: 512M
+          - name: HEAP_NEWSIZE
+            value: 100M
+          - name: CASSANDRA_SEEDS
+            value: "cassandra-0.cassandra.default.svc.cluster.local"
+          - name: CASSANDRA_CLUSTER_NAME
+            value: "K8Demo"
+          - name: CASSANDRA_DC
+            value: "DC1-K8Demo"
+          - name: CASSANDRA_RACK
+            value: "Rack1-K8Demo"
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - /ready-probe.sh
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+        volumeMounts:
+        - name: cassandra-data
+          mountPath: /cassandra_data
+  volumeClaimTemplates:
+  - metadata:
+      name: cassandra-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 1Gi
+	  
+```
+**Not**: Burada ClusterIp kismi none birakiliyor. Deployment ayrilan en buyuk ozellik.
+
+↪️ `Bir container olusturup onun icinden statefulset imize ping atabiliriz. Yani buradaki cassandra ya ulasabiliriz.
+
+`ping cassandra` komutu bizi cassandra lardan birine load balancer ile yonlendirecek.
+`ping cassandra-1.cassandra` komutu ile de direk o containera ping atabiliriz.
+
+
+# 59. Job
+Bir pod veya podlar isini yapip kapanmasi gerektigini dusunelim. Bu durumda singlepod calistiramayiz. Cunku isini bitirmediyse tekrar calistirilmaz. deployment calistiramiyiz cunku kapandigi zaman tekrar calismaya basliyor. burada job isini bitirdiginde podlar silinmez. Cunku biz log kayitlarini kullanmak isteyebiliriz.
+
+![image](https://user-images.githubusercontent.com/103413194/185429450-e11fa6c7-347b-41bb-a9c4-7b097bd6cdf1.png)
+
+* Joblar genellikle 2 amac icin kullanilir. birincisi bir gorev dogrultusunda toplayacagi bilgiyi toplayip kapanabilir.
+* 2. si bir bucketta islenmesi gereken bir durum oldugunda joblari kullaniriz.
+
+```
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi
+spec:
+  parallelism: 2
+  completions: 10
+  backoffLimit: 5
+  activeDeadlineSeconds: 100
+  template:
+    spec:
+      containers:
+      - name: pi
+        image: perl
+        command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+      restartPolicy: Never #OnFailure 
+```
+
+↪️ completions ile toplam kac pod olusturmak istedigimizi
+↪️ parallelism ile de bunu kacar kacar yapacagimizi belirtiyoruz. ilk once 2 pod acilacak isini yaptiktan sonra kapanacak daha sonra 2 pod daha acilacak toplam 10 pod olana kadar bu islem devam edecek.
+↪️ backoffLimit da ise toplam kac hata alirsak bu islem iptal edilsin.
+↪️ activeDeadlineSeconds de ise 100 saniye icinde islem tamamlanmassa iptal edilsin.
+
+🔖 bu podlar isleri bittigi zaman silinmiyor. Bir zaman sonra ciddi bir yuk olusturuyorlar. bunun icin bunlari manuel olarak silmeliyiz.
+
+`kubectl delete job.batch pi` 
+
+komutuyla silebiliriz.
 
 
 
-	
-	
+
+# 60. CronJob
+
+🔖 Bir uygulamayı ya da sistemin bir özelliğini her dakika, her saat, her gün ya da belirlediğin zamanlarda çalıştırsın gibi özellikleri vardır. Örneğin her saat başı sisteminizdeki işlemci kullanımını bir log dosyasına koydurabilirsiniz, ya da yazdığınız bir uygulama var her saat başı o uygulamayı çalıştırmayı yapabilirsiniz. Uygulamanın kendisine bir thread tarzı birşey yapmadan halletmiş olursunuz.
+
+🔖 Crontab linux işletim sistemlerinde zamana bağlı otomatik iş yapmak için bir uygulamadır. Crone Job olarak da anılır. 
+
+![image](https://user-images.githubusercontent.com/103413194/185432121-7514cefb-2ef6-439e-93fc-79611745eeef.png)
+
+```
+apiVersion: batch/v1beta1 # not stable until kubernetes 1.21.
+kind: CronJob
+metadata:
+  name: hello
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: hello
+            image: busybox
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - date; echo Hello from the Kubernetes cluster
+          restartPolicy: OnFailure
+#
+# ┌───────────── minute (0 - 59)
+# │ ┌───────────── hour (0 - 23)
+# │ │ ┌───────────── day of the month (1 - 31)
+# │ │ │ ┌───────────── month (1 - 12)
+# │ │ │ │ ┌───────────── day of the week (0 - 6) (Sunday to Saturday;
+# │ │ │ │ │                                   7 is also Sunday on some systems)
+# │ │ │ │ │
+# │ │ │ │ │
+# * * * * *
+#
+# https://crontab.guru/  ## linkten bu tabloya bakilabilir.
+
+```
+![image](https://user-images.githubusercontent.com/103413194/185539837-28cc4dae-706c-4bea-af04-5f4a15097ff9.png)
+
+her iki saatte bir calis anlamina geliyor.
+
+# 61. Authentication
+* Kubernetes de kimlik olusturma ve kimlik dogrulama isi cluster disindan halledilecek sekilde tasarlanmistir. yani bir pod veya servis olusturur gibi kullanici olusturamayiz.	
+* 
+![image](https://user-images.githubusercontent.com/103413194/185541338-9ef67b08-e532-4016-a4d4-c5582cec46cd.png)
+
+buradaki sertifikalardan birini kubeapi de belirleyip kullaniriz.
+kimlik dogrulama bu sekilde yapilabilir. fakat yetkilendirme icin de farkli islemler yapmaliyiz.
+bir ornekle aciklayacak olursak:
+developer adminle gorusup clusterlara ulasmak istiyor. adminde bir sertifika icin private key ve csr  istiyor.
+
+![image](https://user-images.githubusercontent.com/103413194/185541936-347def58-a69d-4eae-b184-796ff2255b82.png)
+
+biz bu sekilde private key imizi olusturuyoruz. daha sonra bu anahtari kullanarak bir srr hazirlamam gerekiyor. 
+
+![image](https://user-images.githubusercontent.com/103413194/185542197-65476545-7755-45d1-a97b-314171fe9793.png)
+
+burada olusturdugum csr dosyasini kubernetes admine gonderecegim ve diger isleri o halledecek.
+
+**Key ve CSR oluşturma**
+```
+$ openssl genrsa -out ozgurozturk.key 2048 
+
+$ openssl req -new -key ozgurozturk.key -out ozgurozturk.csr -subj "/CN=ozgur@ozgurozturk.net/O=DevTeam"
+```
+
+**CertificateSigningRequest oluşturma**
+admin olarak asagidaki yaml dosyasini terminalde calistiriyoruz.
+
+```
+$ cat <<EOF | kubectl apply -f -
+apiVersion: certificates.k8s.io/v1
+kind: CertificateSigningRequest
+metadata:
+  name: ozgurozturk
+spec:
+  groups:
+  - system:authenticated
+  request: $(cat ozgurozturk.csr | base64 | tr -d "\n")
+  signerName: kubernetes.io/kube-apiserver-client
+  usages:
+  - client auth
+EOF
+```
+
+bu sekilde bir tane scr objem olustu.
+
+daha sonra bunu admin olarak onaylamam gerekiyor.
+
+**CSR onaylama ve crt'yi alma**
+
+```
+$ kubectl get csr
+
+$ kubectl certificate approve ozgurozturk
+
+$ kubectl get csr ozgurozturk -o jsonpath='{.status.certificate}' | base64 -d >> ozgurozturk.crt 
+```
+buradaki son komutu girerek crt uzantili bir sertifikam olusturuluyor.
+
+daha sonra developer bu sertifikayi aldi ve minikube altina kaydetti. Developer bu sertifikayla config ayarlarina baglanip sertifikayi tanimlamasi gerekiyor.
+
+```
+$ kubectl config set-credentials ozgur@ozgurozturk.net --client-certificate=ozgurozturk.crt --client-key=ozgurozturk.key
+
+```
+bu komutla csr olusturduk.
+simdi bunu minikube cluster ile iliskilendirmem gerekiyor. bunun icin bir context olusturmam gerekiyor.
+
+```
+$ kubectl config set-context ozgurozturk-context --cluster=minikube --user=ozgur@ozgurozturk.net
+
+```
+↪️ context, bir user ve onunla iliskili bir clusterin bir araya gelmesidir.
+
+```
+
+$ kubectl config use-context ozgurozturk-context
+```
+
+bu sekilde de ozgurozturk olarak clustere baglanabilirim.
+
+Her kullanici varsayilan olarak sifir yetkiyle gelir. ama hic bir islem yapamaz. kullanicimiz authentication oldu ama auto kisitli.
+
+# 62. Role Based Access Control
+https://medium.com/devopsturkiye/kubernetes-role-base-access-and-cluster-role-binding-9210c1d9b50a
+
+Kubernetes içerisinde yetkilendirme için çeşitli yöntemler bulunmaktadır. Role Based Access Control (RBAC) bunlardan biridir. Örneğin belirli bir service account için resource listeleme,silme,değiştime işlemi için yetki verip bu resource’ları yönetebiliriz.
+RBAC, yetki ve rollerin tanimlanmasi, ve bu tanimlanmis yetki ve rollerin kimligi dogrulanmis objelere atanmasi prensibine gore calistir.
+
+![image](https://user-images.githubusercontent.com/103413194/185735083-42a1d70e-c593-4a3e-b0eb-ba37919feaad.png)
+
+
+RBAC için 3 önemli bileşeni vardır;
+
+Subject: Kullanıcılar, gruplar veya service accountları temsil eder.
+Resource: Üzerinde yetkilendirme yapılacak kubernetes api objelerini temsil eder. (Pods, services, configMap etc)
+Verbs: Yapılacak işlemi temsil eder.
+Note: Role namespace bazında çalışır.
+
+```
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: default
+  name: pod-reader
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["pods"] # "services", "endpoints", "pods", "pods/log" etc.
+  verbs: ["get", "watch", "list"] # "get", "list", "watch", "post", "put", "create", "update", "patch", "delete"
+ ```
+
+ClusterRole: ClusterRole belirli bir namespace için değil tüm kümedeki kaynaklara izin verir ve uygular. Yani tüm kubernetes altındaki tüm namespaceler için yetkilendirilmiş oluruz.
+
+Note: ClusterRole ise cluster bazında çalışır. Tüm Cluster içinde yetkili olur.
+
+Service Account: Podlar tarafından kullanılır ve ilgili podun yetkilerini belirler.
+
+
+![image](https://user-images.githubusercontent.com/103413194/185735854-c9971397-bd6d-4087-b257-f65d002c8c1a.png)
+
+
+Ornegin default namespace podlari okuyup listeleyebilecek bir rol olustururum. daha sonra olusturdugum ozgru@ozturk.net kullanicisina baglarim.
+
+**simdiye kadar gordugumuz tum objeler namespace nin altinda olusturuldu. Fakat clusterRole namespacenin altinda olusturulmaz. ayrica nodeler ve bir kac tane daha obje namespacenin altinda olusturulmaz.**
+Dogal olarak clusterRole namespace disindaki objelerde islem yapmak icinde kullanilir.
+
+```
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: secret-reader
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "watch", "list"]
+```
+
+Burada olusturdugumuz rolleri ayrica binding etmemiz gerekiyor.
+
+```
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-pods
+  namespace: default
+subjects:
+- kind: User
+  name: ozgur@ozgurozturk.net # "name" is case sensitive
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role #this must be Role or ClusterRole
+  name: pod-reader # this must match the name of the Role or ClusterRole you wish to bind to
+  apiGroup: rbac.authorization.k8s.io
+```
+Burada hangi rolu kime binding edecegimizi belirliyoruz. burada ozgur@ozgurozturk.net userine pod-reader rolunu baglamak istiyoruz.
+
+```
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: read-secrets-global
+subjects:
+- kind: Group
+  name: DevTeam # Name is case sensitive
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: secret-reader
+  apiGroup: rbac.authorization.k8s.io
+```
+clusterbinding de rolebinding ile ayni. sadece farki cluster seviyesinde bu islemi yapiyoruz.
+
+Rolleri olusturup baglayabilmek icin admin user da olmaliyiz.
+
+# 63. Service Account
+
+![image](https://user-images.githubusercontent.com/103413194/185736597-d08643fb-201a-4407-a1c5-8011ff88a684.png)
+
+deploy edilen uygulamalarinda kupeapi ile gorusmesi gerekiyor ve cluster uzerinde islemler yapabilmesi gerekiyor. 
+service accountlar service objesi olarak olusturabildigimiz tek heap turudur. 
+
+```
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: testsa
+  namespace: default
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: podread
+  namespace: default
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "watch", "list"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: testsarolebinding
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: testsa
+  apiGroup: ""
+roleRef:
+  kind: Role
+  name: podread
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: testpod
+  namespace: default
+spec:
+  serviceAccountName: testsa
+  containers:
+  - name: testcontainer
+    image: ozgurozturknet/k8s:latest
+    ports:
+    - containerPort: 80
+ ```
+ 
+
+# 64. Ingress
+
+* Uygulamalarımızın dış dünyaya erişebilmesi/dış dünyadan erişilebilmesi için kullandığımız yapıdır.
+
+**Örnek Senaryo**
+
+![](<.gitbook/assets/Screen Shot 2022-01-03 at 10.58.07.png>)
+
+Azure gibi bir cloud service kullandığımızı varsayalım. Servisin içerisine bir LoadBalancer service’ı tanımlayalım. Azure, bizim adımıza bu LoadBalancer servisine bir IP atıyor ve bu IP’ye gelen tüm istekler bu LoadBalancer tarafından karşılanıyor. Biz de bu IP adresi ile DNS sayesinde domainimizi eşleştirerek, kullanıcıların kolay bir şekilde erişmesini sağlayalım.
+
+Aynı k8s cluster içerisinde bir tane daha app ve aynı servisleri tanımladığımızı düşünelim. Hatta abartalım 2, 3, 4 derken her bir LoadBalancer için **Azure’a ekstradan para ödemem ve ayarlarını manuel yapmam gerekiyor.**
+
+**Örnek Senaryo - 2**
+
+![](<.gitbook/assets/Screen Shot 2022-01-03 at 10.58.24.png>)
+
+Bu örnekte ise; kullanıcı **example.com**‘a girdiğinde A uygulaması; **example.com/contact**’a girdiğinde ise B uygulaması çalışsın. Bu durumu, DNS’te **/contact** path’i tanımlayamadığımız için LoadBalancer ile kurgulama şansımız yoktur. Fakat, bizim bir gateway gibi çalışan; kullanıcıyı her halükarda karşılayan bir load balancer’a ihtiyacım var.
+
+İşte bu 2 örnekte/sorunu da **Ingress Controller ve Ingress Object** ile çözüyoruz:
+
+## Ingress Controller ve Ingress Object
+
+![](<.gitbook/assets/Screen Shot 2022-01-03 at 11.02.20.png>)
+
+* **Ingress Controller**, Nginx, Traefik, KrakenD gibi kullanabileceğimiz bir load balancer uygulamasına denir. Bu uygulamalardan birini seçip; k8s cluster’ımıza deploy edebilir ve LoadBalancer servisini kurarak dışarıya expose edebiliriz. Böylelikle, uygulamamız **public bir IP**’e sahip oluyor ve userlar ile tamamen bu IP üzerinden iletişim kurabiliriz.
+* **Peki, gelen istekleri nasıl yönlendiriyoruz?** İşte bu esnada **Ingress Object**‘leri devreye giriyor. (_YAML dosyalarında tanımlanan yapılar_) Ingress Controller’larda yapacağımız konfigürasyonlarla Ingress Object’lerimizi ve Ingress Controller’ların gelen requestlere karşı nasıl davranması gerektiğini belirleyebiliriz.
+* **Load balancing, SSL termination ve path-name based routing** gibi özelliklere sahiptir.
+
+## Local’de Ingress Uygulama
+
+### 1) minikube’ü Ayarlama
+
+* Ingress’i çalıştırmak için minikube driver’ını değiştirmemiz gerekmektedir;
+  * Windows için **Hyper-V**, macOS ve linux için **VirtualBox** seçebiliriz. Seçmeden önce kurulum yapmayı unutmayalım.
+
+```shell
+minikube start --driver=hyperv
+```
+
+### 2) Ingress Controller Seçimi ve Kurulumu
+
+*   Biz nginx ile devam edeceğiz. Her ingress controller’ın kurulumu farklıdır. Kurulum detaylarını uygulamanın kendi web sitesinden öğrenebilirsiniz.
+
+    **Kurulum detayları –>** https://kubernetes.github.io/ingress-nginx/deploy/
+* minikube, yoğun olarak kullanılan nginx gibi bazı ingress controller’ı daha hızlı aktif edebilmek adına addon olarak sunmaktadır.
+
+```shell
+minikube addons enable ingress # ingress addonunu aktif eder.
+minikube addons list # tüm addon'ları listeler.
+```
+
+* :point\_right: **Nginx** kurulduğu zaman kendisine **ingress-nginx** adında bir **namespace yaratır.**
+
+```shell
+# ingress-nginx namespace'ine ait tüm objectlerini listelemek için:
+kubectl get all -n ingress-nginx 
+```
+
+### 3) Ingress Uygulamalarımızı Deploy Etmek
+
+* **blueapp, greenapp, todoapp** için hem podlarımızı hem de servicelerimizi yaratan yaml dosyamızı deploy edelim.
+* **Tüm service’lerin ClusterIP tipinde birer service olduğunu unutmayalım.**
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blueapp
+  labels:
+    app: blue
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: blue
+  template:
+    metadata:
+      labels:
+        app: blue
+    spec:
+      containers:
+      - name: blueapp
+        image: ozgurozturknet/k8s:blue
+        ports:
+        - containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bluesvc
+spec:
+  selector:
+    app: blue
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: greenapp
+  labels:
+    app: green
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: green
+  template:
+    metadata:
+      labels:
+        app: green
+    spec:
+      containers:
+      - name: greenapp
+        image: ozgurozturknet/k8s:green
+        ports:
+        - containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: greensvc
+spec:
+  selector:
+    app: green
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todoapp
+  labels:
+    app: todo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo
+  template:
+    metadata:
+      labels:
+        app: todo
+    spec:
+      containers:
+      - name: todoapp
+        image: ozgurozturknet/samplewebapp:latest
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todosvc
+spec:
+  selector:
+    app: todo
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+```
+
+### 4) Ingress Object’lerini Deploy Etme ve Ayarlama
+
+* Load balancer için gerekli olan Ingress Controller’ımızı Nginx olarak seçtik ve kurduk.
+* Her bir app için gerekli olan ClusterIP tipinde servislerimizi de kurduktan sonra, sıra kullanıcıların **example.com/a** yazdığında A service’ine gitmesi için gerekli **Ingress object’lerimizi** de deploy etmeye geldi.
+
+> _**Araştırma Konusu:** –> Layer 7 nedir? Ne işe yarar?_
+
+**blue, green app’ler için Ingress Object tanımlaması:**
+
+* `pathType` kısmı `exact`veya `Prefix` olarak 2 şekilde ayarlanabilir. Detaylı bilgi için: https://kubernetes.io/docs/concepts/services-networking/ingress/
+
+```shell
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: appingress
+  annotations:
+  # Nginx üzerinde ayarlar, annotations üzerinden yapılır.
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  rules:
+    - host: k8sfundamentals.com
+      http:
+        paths:
+          - path: /blue
+            pathType: Prefix 
+            backend:
+              service:
+                name: bluesvc
+                port:
+                  number: 80
+          - path: /green
+            pathType: Prefix
+            backend:
+              service:
+                name: greensvc
+                port:
+                  number: 80
+```
+
+* Farklı bir `path` kullanarak hazırlanan Ingress Objecti:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: todoingress
+spec:
+  rules:
+    - host: todoapp.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: todosvc
+                port:
+                  number: 80
+```
+
+### 5) Tanımlanan Ingress Object’leri test etme:
+
+```yaml
+kubectl get ingress
+```
+
+* Eğer URL’ler ile simüle etmek istersek, **hosts** dosyasını editlememiz gerekir.
+
