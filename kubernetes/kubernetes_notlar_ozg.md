@@ -2624,9 +2624,13 @@ spec:
 ```
 
 ↪️ completions ile toplam kac pod olusturmak istedigimizi
+
 ↪️ parallelism ile de bunu kacar kacar yapacagimizi belirtiyoruz. ilk once 2 pod acilacak isini yaptiktan sonra kapanacak daha sonra 2 pod daha acilacak toplam 10 pod olana kadar bu islem devam edecek.
+
 ↪️ backoffLimit da ise toplam kac hata alirsak bu islem iptal edilsin.
+
 ↪️ activeDeadlineSeconds de ise 100 saniye icinde islem tamamlanmassa iptal edilsin.
+
 
 🔖 bu podlar isleri bittigi zaman silinmiyor. Bir zaman sonra ciddi bir yuk olusturuyorlar. bunun icin bunlari manuel olarak silmeliyiz.
 
@@ -2684,8 +2688,7 @@ spec:
 her iki saatte bir calis anlamina geliyor.
 
 # 61. Authentication
-* Kubernetes de kimlik olusturma ve kimlik dogrulama isi cluster disindan halledilecek sekilde tasarlanmistir. yani bir pod veya servis olusturur gibi kullanici olusturamayiz.	
-* 
+* Kubernetes de kimlik olusturma ve kimlik dogrulama isi cluster disindan halledilecek sekilde tasarlanmistir. yani bir pod veya servis olusturur gibi kullanici olusturamayiz* 
 ![image](https://user-images.githubusercontent.com/103413194/185541338-9ef67b08-e532-4016-a4d4-c5582cec46cd.png)
 
 buradaki sertifikalardan birini kubeapi de belirleyip kullaniriz.
@@ -2862,7 +2865,7 @@ Rolleri olusturup baglayabilmek icin admin user da olmaliyiz.
 ![image](https://user-images.githubusercontent.com/103413194/185736597-d08643fb-201a-4407-a1c5-8011ff88a684.png)
 
 deploy edilen uygulamalarinda kupeapi ile gorusmesi gerekiyor ve cluster uzerinde islemler yapabilmesi gerekiyor. 
-service accountlar service objesi olarak olusturabildigimiz tek heap turudur. 
+service accountlar service objesi olarak olusturabildigimiz tek hesap turudur. 
 
 ```
 apiVersion: v1
@@ -2916,7 +2919,7 @@ spec:
 
 **Örnek Senaryo**
 
-![](<.gitbook/assets/Screen Shot 2022-01-03 at 10.58.07.png>)
+![image](https://user-images.githubusercontent.com/103413194/185862726-fa7d089d-528c-42be-9f8b-ec8454907b36.png)
 
 Azure gibi bir cloud service kullandığımızı varsayalım. Servisin içerisine bir LoadBalancer service’ı tanımlayalım. Azure, bizim adımıza bu LoadBalancer servisine bir IP atıyor ve bu IP’ye gelen tüm istekler bu LoadBalancer tarafından karşılanıyor. Biz de bu IP adresi ile DNS sayesinde domainimizi eşleştirerek, kullanıcıların kolay bir şekilde erişmesini sağlayalım.
 
@@ -2924,7 +2927,8 @@ Aynı k8s cluster içerisinde bir tane daha app ve aynı servisleri tanımladı�
 
 **Örnek Senaryo - 2**
 
-![](<.gitbook/assets/Screen Shot 2022-01-03 at 10.58.24.png>)
+![image](https://user-images.githubusercontent.com/103413194/185862854-54d059d4-2460-4fbc-8366-e880123bc42a.png)
+
 
 Bu örnekte ise; kullanıcı **example.com**‘a girdiğinde A uygulaması; **example.com/contact**’a girdiğinde ise B uygulaması çalışsın. Bu durumu, DNS’te **/contact** path’i tanımlayamadığımız için LoadBalancer ile kurgulama şansımız yoktur. Fakat, bizim bir gateway gibi çalışan; kullanıcıyı her halükarda karşılayan bir load balancer’a ihtiyacım var.
 
@@ -2932,7 +2936,7 @@ Bu örnekte ise; kullanıcı **example.com**‘a girdiğinde A uygulaması; **ex
 
 ## Ingress Controller ve Ingress Object
 
-![](<.gitbook/assets/Screen Shot 2022-01-03 at 11.02.20.png>)
+![image](https://user-images.githubusercontent.com/103413194/185862999-3756d143-8da5-41d2-95f7-2b3b2d840e2a.png)
 
 * **Ingress Controller**, Nginx, Traefik, KrakenD gibi kullanabileceğimiz bir load balancer uygulamasına denir. Bu uygulamalardan birini seçip; k8s cluster’ımıza deploy edebilir ve LoadBalancer servisini kurarak dışarıya expose edebiliriz. Böylelikle, uygulamamız **public bir IP**’e sahip oluyor ve userlar ile tamamen bu IP üzerinden iletişim kurabiliriz.
 * **Peki, gelen istekleri nasıl yönlendiriyoruz?** İşte bu esnada **Ingress Object**‘leri devreye giriyor. (_YAML dosyalarında tanımlanan yapılar_) Ingress Controller’larda yapacağımız konfigürasyonlarla Ingress Object’lerimizi ve Ingress Controller’ların gelen requestlere karşı nasıl davranması gerektiğini belirleyebiliriz.
