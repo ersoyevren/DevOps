@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: liveness
+  name: liveness-http
+spec:
+  containers:
+  - name: liveness
+    image: k8s.gcr.io/liveness
+    args:
+    - /server
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+        httpHeaders:
+        - name: Custom-Header
+          value: Awesome
+      initialDelaySeconds: 3
+      periodSeconds: 3
+
+# Burada containerin gorevini yerine getirip getirmedigini http de belirtilen pathe bir request
+# gondererek anliyoruz. Cevap 200 - 400 arasindaysa isler yolunda. degilse hata oldugunu anliyor.
+# Boylece container yeniden baslatiliyor.
+# initialDelaySeconds ile containera sunu diyoruz. baslatildiktan sonra bu kadar sure bekle.
+# periodSeconds ile hangi periyotta sorgulama yapilacak.
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: liveness
+  name: liveness-exec
+spec:
+  containers:
+  - name: liveness
+    image: k8s.gcr.io/busybox
+    args:
+    - /bin/sh
+    - -c
+    - touch /tmp/healthy; sleep 30; rm -rf /tmp/healthy; sleep 600
+    livenessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/healthy
+      initialDelaySeconds: 5
+      periodSeconds: 5
+
+# burada uygulamamiz her zaman web sitesi olmaz. Bu durumda containerin gorevini yerine getirip
+#  getirmedigini bir string ile anlayabiliriz.
+# exec ile uygulama ve komut calistiririz. burada sonuc 0 donerse saglikli oldugunu anlariz.
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: goproxy
+  labels:
+    app: goproxy
+spec:
+  containers:
+  - name: goproxy
+    image: k8s.gcr.io/goproxy:0.1
+    ports:
+    - containerPort: 8080
+    livenessProbe:
+      tcpSocket:
+        port: 8080
+      initialDelaySeconds: 15
+      periodSeconds: 20
+
+# Bazen containerin saglikli olup olmadigini request veya stringlerle anlayamayiz. Bu durumda
+# tcpsocket yontemini kullaniriz. burada her 20 saniyede bir 8080 portuna request gonderiyor.
+# Buna database olarak dusunebiliriz.
+
+
+# Aciklama
+# Eğer container çalışmassa kubelet contaınerı kapatıp tekrar kuruyor. Fakat ayakta olmasına 
+# rağmen containerin görevini yerine getirmiyorsa kubelet bunu göremiyor. Doğal olarak  
+containeri kapatıp yeniden açmayı denemiyor. Bu durumda liveless probes ile çözebiliyoruz.
+# readiness cok buyuk ihtimalle liveness ile birlikte kullanilir.

@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nodeaffinitypod1
+spec:
+  containers:
+  - name: nodeaffinity1
+    image: ozgurozturknet/k8s
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: app
+            operator: In #In, NotIn, Exists, DoesNotExist
+            values:
+            - blue
+# require ile key ve values degerlerine atif yapiliyor. operatorde `In` varsa node daki label ile 
+# eslesmesi durumunda, NotIn de ise eslesmemesi durumunda pod o nodda olusturuluyor.
+# Exists da ise sadece key'in node dakiyle eslesmesi yeterli, DoesNotExist da ise eslesmeyen
+# node da pod olusturuluyor. Yani Exists ve DoesNotExist da values bir anlam ifade etmiyor.
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nodeaffinitypod2
+spec:
+  containers:
+  - name: nodeaffinity2
+    image: ozgurozturknet/k8s
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - blue
+      - weight: 2
+        preference:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - red
+# preferred ile de key ve values degerlerine atif yapiliyor. Fakat burada olmazsa olmaz degil.
+# Eger mumkun degilse baska bir node da olusturulabiliniyor. Oncelikli lusturma kriteri olarak
+# weight yuksek olan oncelikli node oluyor. 
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nodeaffinitypod3
+spec:
+  containers:
+  - name: nodeaffinity3
+    image: ozgurozturknet/k8s
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: app
+            operator: Exists #In, NotIn, Exists, DoesNotExist
+
+# Burada operator kisminda Exists oldugu icin values bir anlam ifade etmiyor. onun icin yazilmadi.
+
+## Aciklama
+# Nodeselector ile ayni mantikla calisir. Daha fazla opsiyon vardir. Yani burada 
+# 3 turlu kriter belirleyebiliyoruz. (required ve preffered). (3.su henuz yayinlanmadi)

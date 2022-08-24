@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: readiness
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      test: readiness
+  template:
+    metadata:
+      labels:
+        test: readiness
+    spec:
+      containers:
+      - name: readiness
+        image: clarusway/readinessprobe
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 3
+          periodSeconds: 3
+
+# Bir pod olusturuldugunda labeli na uygun olan service altina girer. fakat pod hazir degilse
+# pod requestlere cevap veremeyecek. Bu bir sikinti. Bu durumda readiness kullaniriz. Pod hazir 
+# olduktan sonra service baglanir.
+# readiness cok buyuk ihtimalle liveness ile birlikte kullanilir.

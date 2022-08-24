@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    environment: dev
+spec:
+  replicas: 15
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+      nodeName: kube-master
+
+      # Aciklama
+# Eger basitce bir podu istedigim bir node da olusturmak istiyorsam nodename kullanabilirim.
+# nodename kismina podu olusturmak istedigim node adini yazarim. Fakat bu cok tercih edilen bir
+# durum degildir.

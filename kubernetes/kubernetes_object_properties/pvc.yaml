@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: clarus-pv-claim
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+# pvc olusturulduktan sonra uygun bir pv ye bound oluyor. daha sonra bu pvc yi bir poda
+# bagliyorum. ayni volume birden fazla poda baglanabilir.
+# asagidaki poda pvc yi baglayabiliyoruz.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: clarus-pod
+  labels:
+    app: clarus-web 
+spec:
+  volumes:
+    - name: clarus-pv-storage
+      persistentVolumeClaim:
+        claimName: clarus-pv-claim
+  containers:
+    - name: clarus-pv-container
+      image: nginx
+      ports:
+        - containerPort: 80
+          name: "http-server"
+      volumeMounts:
+        - mountPath: "/usr/share/nginx/html"
+          name: clarus-pv-storage
+
+# pvc yi bu poda volume olarak ekledik. daha sonra da containerin altinda /usr/share/nginx/html
+# dosyasina bagladik.
+
+# ayrica
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: nginx
+spec:
+  containers:
+  - name: mynginx
+    image: nginx:1.19
+    ports:
+    - containerPort: 80
+    volumeMounts:
+      - mountPath: /test
+        name:  emptydir-test
+  volumes:
+  - name: emptydir-test
+    emptyDir: {}
+
+  # burada pvc ile degil de podun icinde emptydir-test adinda bir volume var veya olusturuluyor.
+  # bunu containerin icinde olusturulan test adindaki dosyaya mount ediyoruz.

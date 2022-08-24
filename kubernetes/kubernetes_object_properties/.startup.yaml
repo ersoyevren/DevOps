@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: startup
+  name: startup-http
+spec:
+  containers:
+  - name: liveness
+    image: clarusway/startupprobe
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 80
+      initialDelaySeconds: 3
+      periodSeconds: 3
+    startupProbe:
+      httpGet:
+        path: /healthz
+        port: 80
+      failureThreshold: 5
+      periodSeconds: 15
+
+# bazen bir probe in ayaga kalkmasi cok zaman alabilir. Bu durumda startup ile probe hazir olana 
+# kadar bu sureci bekletmesini soyluyorum. Aksi durumda surekli restart olur.
+
+# Genellikle liveness readiless startup bir arada kullanilir. startup genellikle eski uygulamalari
+# ayaga kaldirmak icin kullanilir. son donemde cok kullanilmiyor.

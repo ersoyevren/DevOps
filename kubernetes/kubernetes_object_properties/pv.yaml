@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: clarus-pv-vol
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/home/ubuntu/pv-data"
+
+# storageClassName turu ile pvc deki tur ayni olmasi gerekiyor.
+# hostpath kullandigimiz volume turudur. EBS vb de olabilir.
+# Bu volume admin olusturuyor.
