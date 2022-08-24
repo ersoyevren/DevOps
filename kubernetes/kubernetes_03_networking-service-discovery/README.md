@@ -430,3 +430,225 @@ kubectl get ep -o wide
 >
 > http://[public-node-ip]:[node-port]
 
+### Labels and loose coupling
+
+- Pods and Services are loosely coupled via labels and label selectors. For a Service to match a set of Pods, and therefore provide stable networking and load-balance, it only needs to match some of the Pods labels. However, for a Pod to match a Service, the Pod must match all of the values in the Service’s label selector.
+
+- Add `version: v1` to `web-svc.yaml --> spec.selector`. So that you end up with:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-flask-svc
+  labels:
+    app: web-flask
+spec:
+  type: NodePort
+  ports:
+  - port: 3000
+    nodePort: 30036
+    targetPort: 5000
+  selector:
+    env: front-end
+    version: v1
+```
+
+- Use kubectl apply to push your configuration changes to the cluster.
+
+```bash
+kubectl apply -f web-svc.yaml
+```
+
+- Reload the page, and see that we can not see the page because of that the Service is selecting on two labels, but the Pods only have one of them. The logic behind this is a Boolean `AND` operation.
+
+- Add `version: v1` to `web-flask.yaml --> spec.template.metadata.labels`. So that you end up with:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-flask-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web-flask
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: web-flask
+        env: front-end
+        version: v1
+    spec:
+      containers:
+      - name: web-flask-pod
+        image: clarusway/cw_web_flask1
+        ports:
+        - containerPort: 5000
+```
+
+- Use kubectl apply to push your configuration changes to the cluster.
+
+```bash
+kubectl apply -f web-flask.yaml
+```
+
+- Reload the page again, and now we can see the page because the `Service` is selecting on two labels and the Pods have all of them.
+
+- Add `test: coupling` to `web-flask.yaml --> spec.template.metadata.labels`. So that you end up with:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-flask-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web-flask
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: web-flask
+        env: front-end
+        version: v1
+        test: coupling
+    spec:
+      containers:
+      - name: web-flask-pod
+        image: clarusway/cw_web_flask1
+        ports:
+        - containerPort: 5000
+```
+
+- Push your configuration changes to the cluster.
+
+```bash
+kubectl apply -f web-flask.yaml
+```
+
+- Reload the page again, and we see the page although the `Pods` have additional labels that the `Service` is not selecting on.
+
+### To connect a service from different namespace
+#### bir poda ulasmak icin ayni servicteyse servisin adi ve port yeterlidir. fakat farkli bir namespace ulasmak icin servisin adi, nameservice adi ve port olmasi gerekir.
+
+- Kubernetes has an add-on for DNS, which creates a DNS record for each Service and its format is:
+
+`web-svc.my-namespace.svc.cluster.local`
+
+- Services within the same Namespace find other Services just by their names. 
+
+- Let's understand this issue with an example.
+
+- First of all remove whole deployment and service into the default namespace
+
+```bash
+kubectl delete -f .
+```
+
+- Create a namespace and name it `demo`.
+
+```bash
+kubectl create namespace demo
+```
+
+- Create a deployment inside the `demo` namespace with `web-flask.yaml` file.
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-flask-deploy
+  namespace: demo
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web-flask
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: web-flask
+        env: front-end
+        version: v1
+        test: coupling
+    spec:
+      containers:
+      - name: web-flask-pod
+        image: clarusway/cw_web_flask1
+        ports:
+        - containerPort: 5000
+```
+- Create a service inside the `demo` namespace.
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-flask-svc
+  namespace: demo
+  labels:
+    app: web-flask
+spec:
+  type: NodePort
+  ports:
+  - port: 3000
+    targetPort: 5000
+    nodePort: 30036
+  selector:
+    env: front-end
+```
+- create deployment and service
+```bash
+kubectl apply -f .
+```
+
+- show all namespaces
+```bash
+kubectl get ns
+```
+
+- Lets see the all objects within demo namespace and default namespace
+```bash
+kubectl get deploy -n demo
+kubectl get pod -n demo
+kubectl get svc -n demo
+kubectl get pod
+kubectl get svc
+```
+
+- log into the container and curl the `web-flask-svc` inside `demo` namespace.
+
+```bash
+kubectl exec -it forcurl -- sh
+/ # curl web-flask-svc.demo:3000
+
+or we can use `FQDN`.
+
+/ #  curl web-flask-svc.demo.svc.cluster.local:3000
+```
+
+- Delete all objects.
+
+```bash
+kubectl delete -f .
+kubectl delete ns demo
+```'
