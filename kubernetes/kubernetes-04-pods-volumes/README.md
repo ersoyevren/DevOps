@@ -344,3 +344,89 @@ kubectl get pv,pvc
 ```bash
 kubectl delete -f .
 ```
+## Part 4 - EmptyDir
+
+- An `emptyDir volume` is first created when a Pod is assigned to a node, and exists as long as that Pod is running on that node. 
+- As the name says, the emptyDir volume is initially empty. 
+- When a Pod is removed from a node for any reason, the data in the emptyDir is deleted permanently.
+
+> Note : A container crashing does not remove a Pod from a node. The data in an emptyDir volume is safe across container crashes.
+
+- Create a folder name it emptydir.
+
+```bash
+mkdir emptydir && cd emptydir
+```
+
+- Create an `nginx.yaml` file for creating an nginx pod.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: nginx
+spec:
+  containers:
+  - name: mynginx
+    image: nginx:1.19
+    ports:
+    - containerPort: 80
+    volumeMounts:
+      - mountPath: /test
+        name:  emptydir-test
+  volumes:
+  - name: emptydir-test
+    emptyDir: {}
+```
+
+- create the nginx-pod.
+
+```bash
+kubectl apply -f nginx.yaml 
+```
+
+- Log in the nginx-pod and notice that there is a test folder.
+
+```bash
+kubectl exec -it nginx-pod -- bash
+root@nginx-pod:/# ls
+bin   dev                  docker-entrypoint.sh  home  lib64  mnt  proc  run   srv  test  usr
+boot  docker-entrypoint.d  etc                   lib   media  opt  root  sbin  sys  tmp   var
+```
+
+- Create a text file in test folder.
+
+```bash
+root@nginx-pod:/# cd test
+root@nginx-pod:/test# echo "Hello World" > hello.txt 
+root@nginx-pod:/test# cat hello.txt 
+Hello World
+```
+
+- Log in the `kube-worker-1 ec2-instance` and remove the `nginx container`. Note that container is changed.
+
+```bash
+docker container ls
+docker container rm -f <container-id>
+docker container ls
+```
+
+- Log in the kube-master ec2-instance again and connect the nginx-pod. See that test folder and content are there.
+
+```bash
+kubectl exec -it nginx-pod -- bash
+root@nginx-pod:/# ls
+bin   dev                  docker-entrypoint.sh  home  lib64  mnt  proc  run   srv  test  usr
+boot  docker-entrypoint.d  etc                   lib   media  opt  root  sbin  sys  tmp   var
+root@nginx-pod:/# cd test/
+root@nginx-pod:/test# cat hello.txt 
+Hello World
+```
+
+- Delete the pod.
+
+```bash
+kubectl delete pod nginx-pod
+```
