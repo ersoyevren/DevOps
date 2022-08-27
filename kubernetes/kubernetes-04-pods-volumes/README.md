@@ -218,3 +218,129 @@ kubectl delete pvc clarus-pv-claim
 kubectl delete pv clarus-pv-vol
 ```
 
+## Part 3 - Binding PV to PVC
+
+- Create a folder name it "pvc-bound"
+
+```bash
+mkdir pvc-bound && cd pvc-bound
+```
+
+- Create a `pv-3g.yaml` file using the following content with the volume type of `hostPath` to build a `PersistentVolume`.
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-3g
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 3Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/home/ubuntu/pv-data"
+```
+
+- Create the PersistentVolume `pv-3g`.
+
+```bash
+kubectl apply -f pv-3g.yaml
+```
+
+- Create a `pv-6g.yaml` file using the following content with the volume type of `hostPath` to build a `PersistentVolume`.
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-6g
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 6Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/home/ubuntu/pv-data"
+```
+
+- Create the PersistentVolume `pv-6g`.
+
+```bash
+kubectl apply -f pv-6g.yaml
+```
+
+- List to PersistentVolume's.
+
+```bash
+kubectl get pv
+```
+
+- Create a `pv-claim-2g.yaml` file using the following content to create a `PersistentVolumeClaim`.
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pv-claim-2g
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+# storage olarak hangi pv ye yakinsa ona baglanir.
+```
+
+- Create the PersistentVolumeClaim `pv-claim-2g`.
+
+```bash
+kubectl apply -f pv-claim-2g.yaml
+```
+
+- View information about the `PersistentVolumeClaim` and show that the `pv-claim-2g` is bound to PersistentVolume `pv-3g`. Notice that the capacity of the pv-claim-2g is 3Gi.
+
+```bash
+kubectl get pvc
+```
+
+- Create another PersistentVolumeClaim file and name it `pv-claim-7g.yaml`.
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pv-claim-7g
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 7Gi
+```
+
+- Create the PersistentVolumeClaim `pv-claim-7g`.
+
+```bash
+kubectl apply -f pv-claim-7g.yaml
+```
+
+- View information about the `PersistentVolume's` and `PersistentVolumeClaim's` and show that the status of `pv-claim-7g` is `pending` and the satus of pv-6g is available. 
+
+```bash
+kubectl get pv,pvc
+```
+
+- Delete all pv and pvc's.
+
+```bash
+kubectl delete -f .
+```
