@@ -337,3 +337,194 @@ node1 | CHANGED | rc=0 >>
 tyler:#665fffgkg6&fkg689##2£6466?%^^+&%+:18569:0:99999:7:::
 ```
 
+# Part 4 - Working with Dynamic Inventory Using EC2 Plugin
+
+
+![ho-05](ho-05.png)
+
+### Pinging the Target Nodes with static inventory
+
+
+- Make a directory named ```dynamic-inventory``` under the home directory and cd into it.
+
+```bash 
+$ mkdir dynamic-inventory
+$ cd dynamic-inventory
+```
+
+- Create a file named ```inventory.txt``` with the command below.
+
+```bash
+$ nano inventory.txt
+```
+
+- Paste the content below into the inventory.txt file.
+
+- Along with the hands-on, public or private IPs can be used.
+
+```txt
+[servers]
+db_server   ansible_host=<YOUR-DB-SERVER-IP>   ansible_user=ec2-user  ansible_ssh_private_key_file=~/<YOUR-PEM-FILE>
+web_server  ansible_host=<YOUR-WEB-SERVER-IP>  ansible_user=ec2-user  ansible_ssh_private_key_file=~/<YOUR-PEM-FILE>
+
+- Create file named ```ansible.cfg``` under the the ```dynamic-inventory``` directory.
+
+```bash
+$ nano ansible.cfg
+```
+
+```cfg
+[defaults]
+host_key_checking = False
+inventory=/etc/ansible/hosts
+interpreter_python=auto_silent
+private_key_file=~/<pem file>
+```
+
+
+- Create a file named ```ping-playbook.yml``` and paste the content below.
+
+```bash
+$ nano ping-playbook.yml
+```
+
+```yml
+- name: ping them all
+  hosts: all
+  tasks:
+    - name: pinging
+      ping:
+```
+
+- Run the command below for pinging the servers.
+
+```bash
+$ ansible-playbook ping-playbook.yml
+```
+
+- Explain the output of the above command.
+
+- Change the inventory's value in ansible.cfg file to inventory.txt. 'inventory=/home/ec2-user/dynamic-inventory/inventory.txt'
+
+- Run the command below for pinging the servers.
+
+```bash
+$ ansible-playbook ping-playbook.yml
+```
+### Working with dynamic inventory
+
+- go to AWS Management Consol and select the IAM roles:
+
+- click the  "create role" then create a role with "AmazonEC2FullAccess"
+
+- go to EC2 instance Dashboard, and select the control-node instance
+
+- select actions -> security -> modify IAM role
+
+- select the role thay you have jsut created for EC2 full access and save it.
+
+- install "boto3 and botocore"
+
+```bash
+$ sudo yum install pip
+$ pip install --user boto3 botocore
+```
+# *aws_ec2.yaml dosyasini calistirmak icin ec2 ya full access yetkisi vermemiz ve boto3 botocore kurmamiz gerekiyor. 
+
+- Create another file named ```inventory_aws_ec2.yml``` in the project directory.
+
+```bash
+$ nano inventory_aws_ec2.yml
+```
+
+```yml
+plugin: aws_ec2
+regions:
+  - us-east-1
+keyed_groups:
+  - key: tags.Name
+  - prefix: arch
+    key: architecture
+  - prefix: tag
+    key: tags
+  - prefix: region
+    key: placement.region
+  - prefix: instance_type
+    key: instance_type
+compose:
+  ansible_host: public_ip_adress
+  foo: private_ip_address
+  boo: instance_id
+  key: key_name
+filters:
+  instance-state-name: running
+ # tag:env: ansible
+# key kisminda ec2 nun ismi ne ise o geliyor. 
+# compose ile de degisken kullanabiliyorum. burada ansible_host yerine public_ip_address kullaniyoruz.
+# filters komutu ile calisan bilgisayarlari listeleyebiliyorum.
+# ayrica tag ile de bilgisayarlara verdigim taglara gore listeleyebiliyorum.
+```
+- see the inventory
+
+```bash
+$ ansible-inventory -i inventory_aws_ec2.yml --graph
+# ?? buradaki graph ne ise yariyor.
+```
+# bu komut ile aws_ec2.yml icinde tanimladigim regiondaki var olan hostslarimi getiriyor.
+```
+@all:
+  |--@aws_ec2:
+  |  |--ec2-34-201-69-79.compute-1.amazonaws.com
+  |  |--ec2-54-234-17-41.compute-1.amazonaws.com
+  |--@ungrouped:
+```
+- Change the inventory's value in ansible.cfg file to inventory.txt. 'inventory=/home/ec2-user/dynamic-inventory/inventory_aws_ec2.yml'
+
+
+- To make sure that all our hosts are reachable with dynamic inventory, we will run various ad-hoc commands that use the ping module.
+
+```bash
+$ ansible all -m ping --key-file "~/<pem file>"
+```
+
+- create a playbook name "user.yml"
+
+```yml
+---
+- name: create a user using a variable
+  hosts: all
+  become: true
+  vars:
+    user: lisa
+  tasks:
+    - name: create a user {{ user }}
+      user:
+        name: "{{ user }}"
+    - debug:
+        msg: "private_ip is {{ foo }}"
+
+    - debug:
+        msg: "instance_id is {{ boo }}"
+
+    - debug:
+        msg: "my key pem is {{ key }}"
+
+    - debug:
+        msg: "host is {{ ansible_host }}"
+
+    - debug:
+        msg: "user name is {{ user | upper }}"
+
+    - debug:
+        msg: "{{ [1, 2, 3, 4] | min }}"
+```
+- run the playbook
+
+```bash
+$ ansible-playbook user.yml -i inventory_aws_ec2.yml
+```
+
+```bash
+$ ansible all -a "tail -2 /etc/passwd"
+# makinelerdeki kuyruk kismindaki son 2 satiri goruyor.
+```
