@@ -120,7 +120,7 @@ terraform fmt
 - Now, show `main.tf` file. It was formatted again.
 
 ### terraform console
-
+# terraformun cli diyebiliriz. genellikle kaynak bilgilerini almak icin kullaniriz. 
 - Go to the terminal and run `terraform console`.This command provides an interactive command-line console for evaluating and experimenting with expressions. This is useful for testing interpolations before using them in configurations, and for interacting with any values currently saved in state. You can see the attributes of resources in tfstate file and check built in functions before you write in your configuration file. 
 
 - Lets create a file under the terraform-aws directory and name it `cloud` and paste `hello devops engineers`.
@@ -144,7 +144,7 @@ terraform console
 ```
 
 ### show command.
-
+# terraform.tfstate dosyasinin icindeki bilgileri terraform show ile de duzenli bir sekilde gorebilirim.
 - Go to the terminal and run `terraform show`.
 
  You can see tfstate file or plan in the terminal. It is more readable than `terraform.tfstate`.
@@ -154,13 +154,13 @@ terraform show
 ```
 
 ### graph command.
-
+# terraform graph komutunda cikan output u belirtilen adrese yazinca basit grafik cikiyor.
 - Go to the terminal and run `terraform graph`. It creates a visual graph of Terraform resources. The output of "terraform graph" command is in the DOT format, which can easily be converted to an image by making use of dot provided by GraphViz.
 
 - Copy the output and paste it to the `https://dreampuf.github.io/GraphvizOnline`. Then display it. If you want to display this output in your local, you can download graphviz (`sudo yum install graphviz`) and take a `graph.svg` with the command `terraform graph | dot -Tsvg > graph.svg`.
 
 ```bash
-terraform graph  #.dot formatinda cikti veriyor.
+terraform graph  
 ```
 
 ### output command.
@@ -178,13 +178,14 @@ output "tf_example_s3_meta" {
   value = aws_s3_bucket.tf-s3.region
 }
 ```
-
+# ykaridaki output blogunu main.tf ekliyoruz. ilk satirdaki ismi biz veriyoruz. digerini ise kaynakta bulunan resource ismini ve bizim verdigimiz ismin arasina . koyarak sonrasinda da bu kaynakla ilgili istedigimiz bilgiyi yazarak duzenliyoruz. boylece bize bu kaynagin istedigimiz bilgisini veriyor.
 ```bash
 terraform apply
 terraform output
 terraform output -json
 terraform output tf_example_public_ip
 ```
+# sadece terraform output yazarak da (apply yapmadan) sonucu gorebiliriz.
 
 ### terraform apply -refresh-only command.
 
@@ -194,8 +195,10 @@ terraform output tf_example_public_ip
 $ terraform state list
 aws_instance.tf-example-ec2
 aws_s3_bucket.tf-example-s3
+# mevcut olan kaynaklari bize veriyor.
 
 $ terraform apply -refresh-only
+#terraform.state ile eslestirme yapyor. manuel olarak birsey silersek bu sekilde eslestirme yapabiliriz.
 
 $ terraform state list
 aws_instance.tf-example-ec2
@@ -250,7 +253,7 @@ output "tf_example_private_ip" {
 ```
 
 - Run the command `terraform apply -refresh=false`.
-
+# burada refresh yapmadan kaynaklalari outputu gorebiliyoruz.
 ```bash
 $ terraform apply -refresh=false
 
@@ -345,7 +348,7 @@ output "tf-example-s3" {
   value = aws_s3_bucket.tf-s3[*]
 }
 ```
-
+## 327. satirdaki "${var.ec2_name}-instance" ifadesiyle tirnak icinde kullanmaliyiz. cunku sonuna bir string ekliyoruz.
 ```bash
 terraform apply
 ```
@@ -354,9 +357,9 @@ terraform apply
 
 ```bash
 terraform validate
-
+# .tf dosyasini apply ettigimizde karsimiza cikacak hatalari veriyor.
 terraform fmt
-
+# bu komut ile sekilsel hatalari duzenliyoruz.
 terraform apply
 ```
 
@@ -367,7 +370,7 @@ variable "s3_bucket_name" {
 #   default     = "oliver-new-s3-bucket-addwhateveryouwant"
 }
 ```
-
+# plan dedigimde degiskenin ismini girebiliyorum.
 ```bash
 terraform plan
 ```
@@ -387,6 +390,7 @@ terraform plan
 ```bash
 terraform plan -var="s3_bucket_name=oliver-new-s3-bucket-2"
 ```
+# terminalden direk degisken atiyorum.
 
 #### environment variables
 
@@ -398,6 +402,7 @@ terraform plan -var="s3_bucket_name=oliver-new-s3-bucket-2"
 export TF_VAR_s3_bucket_name=oliver-env-varible-bucket
 terraform plan
 ```
+# cevresel degisken atayabiliyoruz. burada cli girmemiz yeterli. terraform plan ile degisiklikleri gorebiliriz.
 
 #### In variable definitions (.tfvars)
 
@@ -436,8 +441,9 @@ terraform plan
 ```
 
 - Terraform loads variables in the following order:
-
+# oncelik sirasi
   - Any -var and -var-file options on the command line, in the order they are provided.
+  # bunu cli da giriyoruz. digerleri dosyalar oluyor.
   - Any *.auto.tfvars or *.auto.tfvars.json files, processed in lexical order of their filenames.
   - The terraform.tfvars.json file, if present.
   - The terraform.tfvars file, if present.
@@ -454,7 +460,7 @@ terraform apply
 - A local value assigns a name to an expression, so you can use it multiple times within a module without repeating it.
 
 - Make the changes in the `main.tf` file.
-
+# bu sekilde localde degisken atayabiliyoruz.
 ```go
 locals {
   mytag = "oliver-local-name"
@@ -582,7 +588,8 @@ output "uppercase_users" {
   value = [for user in var.users : upper(user) if length(user) > 6]
 }
 ```
-
+# toset listeleri sete donusturuyor.
+# 
 ```bash
 terraform apply
 ```

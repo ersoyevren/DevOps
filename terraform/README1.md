@@ -30,12 +30,14 @@ ssh -i .ssh/call-training.pem ec2-user@ec2-3-133-106-98.us-east-2.compute.amazon
 
 ```bash
 $ sudo yum update -y
+# os de guncelleme yapiyoruz.
 ```
 
 - Install yum-config-manager to manage your repositories.
 
 ```bash
 $ sudo yum install -y yum-utils
+# bu ve asagidaki command ile terraform yukleyebilmek icin alt yapiyi hazirliyoruz.
 ```
 - Use yum-config-manager to add the official HashiCorp Linux repository to the directory of /etc/yum.repos.d.
 
@@ -100,6 +102,7 @@ $ aws configure
 
 ### Create a role in IAM management console.
 
+# ec2 muza gorev yaptirabilmemiz icin rol tanimliyoruz. bunu aws configure ve cli ile de yapabilirdik. fakat en guvenilir yolu budur.
 - Secure way to make API calls is to create a role and assume it. It gives temporary credentials for access your account and makes API calls.
 
 - Go to the IAM service, click "roles" in the navigation panel on the left then click "create role". 
@@ -127,6 +130,7 @@ $ mkdir terraform-aws && cd terraform-aws && touch main.tf
 - Create a file named `main.tf` for the configuration code and copy and paste the following content. 
 
 ```t
+
 terraform {
   required_providers {
     aws = {
@@ -340,6 +344,7 @@ Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
 ```bash
 $ terraform state list
 aws_instance.tf-ec2
+# mevcut olusturulmus resource lari gosteriyor.
 ```
 
 ### Creating a AWS S3 bucket
@@ -403,6 +408,8 @@ terraform apply -auto-approve
 
 ```bash
 terraform plan -out=justs3
+# planda bir degisiklik yaptim bunu burada justs3 adli
+# dosyanin altina yazdirabiliyorum. daha sonra apply ile bu dosyayi calistirabiliirim ama cok kullanilmiyor.
 ```
 - Now we have just an S3 bucket in justs3. Check that `terraform.tfstate` file has both ec2 and s3 bucket (real infrastructure). If we apply justs3 file it will delete the EC2 instance and modify the tfstate file. You can save your plans with -out flag. First, you can uncomment the EC2 instance.
 

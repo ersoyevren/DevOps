@@ -29,6 +29,7 @@ At the end of this hands-on training, students will be able to;
 ```bash
 sudo yum update -y
 sudo amazon-linux-extras install ansible2
+# ?? nicin yum ile kurmuyoruz.
 
 # guncelleme yapip ansibleyi kuruyoruz.
 ```
@@ -91,7 +92,7 @@ ansible_ssh_private_key_file=/home/ec2-user/<pem file>
 
 ```bash
 $ scp -i <pem file> <pem file> ec2-user@<public DNS name of Control Node>:/home/ec2-user
-# burada yereldeki bilgisayarimizdan ec2 ya pem dosyamizi gonderiyoruz.
+# burada yereldeki bilgisayarimizdan ec2 ya pem dosyamizi gonderiyoruz. bunu yereldeki ssh oldugu dosyadan yapiyoruz.
 ```
 - Check if the file is transferred to the remote machine. 
 
@@ -114,6 +115,8 @@ $ ansible webservers --list-hosts
 
 ```bash
 $ ansible all -m ping
+# butun node lara ping atiyor. all butun hostlarimizi ifade ediyor.
+# burada hata verir. cunku key.pem sadece owner da yetkisi olmasi gerekiyor. bunu duzenlemek icin chmod 400 key.pem kodunu girmemiz gerekiyor.
 $ ansible webservers -m ping
 $ ansible node1 -m ping
 ```
@@ -130,7 +133,7 @@ $ ansible node1 -m ping
 
 ```bash
 $ ansible-doc ping
-#ansible da ping nasil kullanilir komutu / dokumantasyon sayfasindakini
+#ansible da ping nasil kullanilir komutu / dokumantasyon sayfasindakini karsimiza getiriyor.
 ```
 - Emphasize that the successful pinging returns ```pong``` answer. 
 
@@ -197,15 +200,14 @@ load average over the last 15 minutes: 1%
 
 ```bash
 $ ansible webservers -m shell -a "systemctl status sshd"
-# shell komutu ile command komutu yuzde 90 aynidir. fakat
-# command daha security ve shell ise env. ile kullanilabiliyor.
+# shell komutu ile command komutu yuzde 90 aynidir. fakat command daha security ve shell ise env. ile kullanilabiliyor.
 ```
 - Explain the output.
 
 - Run the command below.
 ```bash
 $ ansible webservers -m command -a 'df -h'
-# buradaki df -h diskfile sistemde human readible oldugu
+# buradaki df -h diskfile sistemde ne kadar human readible oldugunu gosteriyor.
 ```
 - Then run the same command without ```-m command``` part.
 
@@ -252,8 +254,7 @@ $ ansible all --list-hosts
 $ ansible all -m ping -o
 $ ansible all -m shell -a "echo Hello Clarusway > /home/ubuntu/testfile3"
 # burada sadece node3 icin yani ubuntu icin calisti.
-# eger ansible all -m shell -a "echo Hello Clarusway > ~/testfile3 deseydik
-# butun node larda calisacakti. ~ isareti envoriment oldugu icin onun altindaki tum kaynaklarda calisti. 
+# eger ansible all -m shell -a "echo Hello Clarusway > ~/testfile3 deseydik butun node larda calisacakti. ~ isareti envoriment oldugu icin onun altindaki tum kaynaklarda calisti. 
 ```
 
 - Explain the error below. Emphasize that the infrastructures we provision need different configurations.
@@ -269,11 +270,11 @@ web_server2 | CHANGED | rc=0 >>
 ```bash
 $ ansible node3 -m shell -a "echo Hello Clarusway > /home/ubuntu/testfile3"
 $ ansible node1:node2 -m shell -a "echo Hello Clarusway > /home/ec2-user/testfile3"
+# : ile hostlari ard arda yazabiliriz.
 ```
 
 - Emphasize the ```:``` sign between the hosts.
 
-# hostlarin arasina : nokta koyarak islemler yaptirabiliriz.
 
 ### Using Shell Module
 
@@ -282,7 +283,7 @@ $ ansible node1:node2 -m shell -a "echo Hello Clarusway > /home/ec2-user/testfil
 ```bash
 ansible webservers -b -m shell -a "amazon-linux-extras install -y nginx1 ; systemctl start nginx ; systemctl enable nginx" 
 # burada webservers altindaki hostlara nginx1 kuruyoruz. 
-# -b become demek ve root yetkisiyle calistirmaya yariyor. 
+# -b become demek root yetkisiyle calistirmaya yariyor. ec2 ya bir sey yuklemek icin root yetkisi gerekiyor.
 # aslinda burada 3 komut calistirmis oluyoruz.; ile komutlari ayiriyoruz.
 ```
 
@@ -318,6 +319,7 @@ $ ansible-doc yum
 
 ```bash
 $ ansible webservers -b -m yum -a "name=nginx state=present"    
+# aslinda 284.satirdaki ayni islemi yapiyoruz.
 ```
 
 -  Explain the difference of the standard outputs. Emphasize the changes in color and ```changed``` property together with idempotency. 
@@ -326,7 +328,7 @@ $ ansible webservers -b -m yum -a "name=nginx state=present"
 
 ```bash
 $ ansible -b -m package -a "name=nginx state=present" all
-# isletim sistemine bakmadan tum hostlarda paketi yukluyor.
+# isletim sistemine bakmadan tum hostlarda package modundan dolayi paketi yukluyor.
 ```
 
 - Connect to nodes and check if nginx was installed. (nginx -v)

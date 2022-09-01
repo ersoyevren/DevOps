@@ -79,7 +79,10 @@ $ scp -i <pem file> <pem file> ec2-user@<public DNS name of the control node>:/h
 - or you can create a file name <pem file> into the directory /etc/ansible on the control node and copy your pem file into it.
 
 ## Part 2 - Ansible Playbooks
-
+```yml
+ansible all -m shell -a "rm -rf ~/test*"
+# bu komut ile home dosyasinin altidndaki test ile baslayan dosyalari siler.
+``` 
 - Create a yaml file named "playbook1.yml" and make sure all our hosts are up and running.
 
 ```yml
@@ -161,6 +164,8 @@ $ vim playbook3.yml
 
    - name: Create a new text file
      shell: "echo Hello World > /home/ec2-user/testfile3"
+
+     #son iki module ayni islemi farkli komutlarla yapti.
 ```
 
 - Run the yaml file.
@@ -201,6 +206,8 @@ $ vim playbook4.yml
      apt:
        name: apache2
        state: latest
+
+       # ubuntuda (apt ile) apacheyi calistirmak icin farkli bir komut girmemize gerek yok. fakat centosta (yum) ile calistirken extra komut girmemiz gerekiyor.
 ```
 - Run the yaml file.
 
@@ -235,6 +242,7 @@ $ vim playbook5.yml
      apt:
        autoremove: yes
        purge: yes
+       #apacheyi silmek icin apt ile extra komut gerekiyor. autoremove ve purge gibi.
 ```
 
 - Run the yaml file.
@@ -362,9 +370,13 @@ vi playbook8.yml
         - aaron
       when: ansible_os_family == "Debian" or ansible_distribution_version == "20.04"
 ```
+# ansible -m ping ungrouped -o ile ansible.cfg dosyasinda var olan ama grubu olmayan hostlarda islem yapar.
 
 - Run the playbook8.yml
 
 ```bash
 ansible-playbook -b playbook8.yml
+
 ```
+# ansible all -b shell -a "cat /etc/passwd | tail -5"
+# bu komut ile eklenen kisileri gorebiliyoruz.
