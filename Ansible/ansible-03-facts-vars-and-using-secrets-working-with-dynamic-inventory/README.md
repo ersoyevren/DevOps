@@ -181,3 +181,159 @@ $ ansible-playbook facts.yml
 ansible-playbook ipaddress.yml 
 ```
 
+## Part 3 - Working with sensitive data
+
+- Create encypted variables using "ansible-vault" command
+
+```bash
+ansible-vault create secret.yml
+#bu komut ile bir yaml dosyasi olusturuyoruz. basta bizden parola istiyor. daha sonra vi ile hassas bilgileri giriyoruz. ve kaydedip cikiyoruz. eger bilgileri gormek istiyorsak ansible-vault view secret.yml komutunu giriyoruz bizden parola istiyor. biz de bu parolayi giriyoruz. eger bu dosyayi normal (crypt) siz hale getirmek istiyorsam ansible-vault decrypt secret.yml komutunu giriyorum.
+# eger var olan bir dosyayi criptolamak istiyorsam ansible-vault encrypt secret.yml
+```
+
+New Vault password: xxxx
+Confirm Nev Vault password: xxxx
+
+```yml
+username: tyler
+password: 99abcd
+```
+
+- look at the content
+
+```bash
+$ cat secret.yml
+```
+```
+33663233353162643530353634323061613431366332373334373066353263353864643630656338
+6165373734333563393162333762386132333665353863610a303130346362343038646139613632
+62633438623265656330326435646366363137373333613463313138333765366466663934646436
+3833386437376337650a636339313535323264626365303031366534363039383935333133306264
+61303433636266636331633734626336643466643735623135633361656131316463
+```
+- how to use it:
+
+- create a file named "create-user"
+
+```bash
+$ nano create-user.yml
+
+```
+
+```yml
+- name: create a user
+  hosts: all
+  become: true
+  vars_files:
+    - secret.yml
+  tasks:
+    - name: creating user
+      user:
+        name: "{{ username }}"
+        password: "{{ password }}"
+```
+# burada become: true ile sudo yetkisini vermis oluyoruz.
+# vars_files komutuyla baska bir dosyadan aliyoruz. 
+- run the plaaybook
+
+```bash
+ansible-playbook create-user.yml
+```
+```bash
+ERROR! Attempting to decrypt but no vault secrets found
+```
+- Run the playbook with "--ask-vault-pass" command:
+
+```bash
+$ ansible-playbook --ask-vault-pass create-user.yml
+```
+Vault password: xxxx
+
+```
+PLAY RECAP ******************************************************************************************
+node1                      : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+node2                      : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
+- To verrify it
+
+```bash
+ansible all -b -m command -a "grep tyler /etc/shadow"
+```
+```
+node1 | CHANGED | rc=0 >>
+tyler:99abcd:18569:0:99999:7:::
+```
+
+- Create another encypted variables using "ansible-vault" command but this time use SHA (Secure Hash Algorithm) for your password:
+
+```bash
+ansible-vault create secret-1.yml
+```
+
+New Vault password: xxxx
+Confirm Nev Vault password: xxxx
+
+```yml
+username: Oliver
+pwhash: 14abcd
+```
+
+- look at the content
+
+```bash
+$ cat secret-1.yml
+```
+```
+33663233353162643530353634323061613431366332373334373066353263353864643630656338
+6165373734333563393162333762386132333665353863610a303130346362343038646139613632
+62633438623265656330326435646366363137373333613463313138333765366466663934646436
+3833386437376337650a636339313535323264626365303031366534363039383935333133306264
+61303433636266636331633734626336643466643735623135633361656131316463
+```
+- how to use it:
+
+- create a file named "create-user-1"
+
+```bash
+$ nano create-user-1.yml
+
+```
+
+```yml
+- name: create a user
+  hosts: all
+  become: true
+  vars_files:
+    - secret-1.yml
+  tasks:
+    - name: creating user
+      user:
+        name: "{{ username }}"
+        password: "{{ pwhash | password_hash ('sha512') }}"     
+``` 
+
+- run the plaaybook
+
+
+```bash
+$ ansible-playbook --ask-vault-pass create-user-1.yml
+```
+Vault password: xxxx
+
+```
+PLAY RECAP ******************************************************************************************
+node1                      : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+node2                      : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
+- to verrify it:
+
+```bash
+ansible all -b -m command -a "grep Oliver /etc/shadow"
+```
+```
+node1 | CHANGED | rc=0 >>
+tyler:#665fffgkg6&fkg689##2£6466?%^^+&%+:18569:0:99999:7:::
+```
+
