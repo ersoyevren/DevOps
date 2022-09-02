@@ -287,3 +287,99 @@ $ ansible-playbook playbook.yml
 ```
 
 
+## Part 5 - Configure User Credentials and Database Schema
+
+- Append the content below into ```playbook.yml``` file in order to create a remote database user.
+
+```yml
+    - name: Create db user with name 'remoteUser' and password 'clarus1234' with all database privileges
+      mysql_user:
+        name: remoteUser
+        password: "clarus1234"
+        login_user: "root"
+        login_password: "clarus1234"
+        priv: '*.*:ALL,GRANT'
+        state: present
+        host: "{{ hostvars['web_server'].ansible_host }}"
+```
+
+- Run the command below to check if everything is ok.
+
+```bash
+$ ansible-playbook playbook.yml
+```
+
+- Append the content below into ```playbook.yml``` file in order to create a database schema for the products table.
+
+```yml
+    - name: Create database schema
+      mysql_db:
+        name: ecomdb
+        login_user: root
+        login_password: "clarus1234"
+        state: present
+```
+
+- Notice that this time the module name is ```mysql_db```.
+
+- Append the content below into ```playbook.yml``` file in order to check if the ```products``` table is already imported.
+
+```yml
+    - name: check if the database has the table
+      shell: |
+        echo "USE ecomdb; show tables like 'products'; " | mysql
+      register: resultOfShowTables
+
+    - name: DEBUG
+      debug:
+        var: resultOfShowTables
+```
+
+- Explain what these shell commands do. 
+
+- Emphasize that we have a new property called ```register```. 
+
+- Skip the explanation of the ```register``` property for now.
+
+- Explain the output of the ```debug module``` **after running the playbook**.
+
+- Append the content below int ```playbook.yml``` file in order to import the ```products``` table.
+
+```yml
+    - name: Import database table
+      mysql_db:
+        name: ecomdb   # This is the database schema name.
+        state: import  # This module is not idempotent when the state property value is import.
+        target: ~/db-load-script.sql # This script creates the products table.
+      when: resultOfShowTables.stdout == "" # This line checks if the table is already imported. If so this task doesn't run.
+```
+
+- Explain that the previously registered task result ```resultOfShowTable``` has a property called stdout. Visit the [link](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html#return-values) to show the returns of the ```shell``` module.
+
+- Explain that if the ```resultofShowTables.stdout``` gives null the database table will be imported. Otherwise, it won't be imported for not getting any error.
+
+- Run the command below to check if there is an error.
+
+```bash
+$ ansible-playbook playbook.yml
+```
+
+- Connect to the database instance to check if there is a table named ```products```.
+
+- Run the command below.
+
+```bash
+$ echo "USE ecomdb; show tables like 'products'; " | mysql
+```
+
+- Append the content below in order to restart the MariaDB service.
+
+```yml
+    - name: restart mariadb
+      become: yes
+      service: 
+        name: mariadb
+        state: restarted
+```
+
+
