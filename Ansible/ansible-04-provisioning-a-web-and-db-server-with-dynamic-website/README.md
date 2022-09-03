@@ -420,3 +420,61 @@ $ echo "USE ecomdb; show tables like 'products'; " | mysql
 
 - Explain that this block of configuration is used to start and enable the Apache Web Server.
 
+## Part 7 - Pull the Code and Make Necessary Changes
+
+- Append the content below into the ```playbook.yml``` file.
+
+```yml
+    - name: clone the repo of the website
+      shell: |
+        if [ -z "$(ls -al /var/www/html | grep .git)" ]; then
+          git clone https://github.com/kodekloudhub/learning-app-ecommerce.git /var/www/html/
+          echo "ok"
+        else
+          echo "already cloned..."
+        fi
+      register: result
+
+    - name: DEBUG
+      debug:
+        var: result
+
+    - name: Replace a default entry with our own
+      lineinfile:
+        path: /var/www/html/index.php
+        regexp: '172\.20\.1\.101'
+        line: "$link = mysqli_connect('{{ hostvars['db_server'].ansible_host }}', 'remoteUser', 'clarus1234', 'ecomdb');"
+      when: not result.stdout == "already cloned..."
+```
+
+- For the first task, explain that;
+    - The first line checks if the result of the ```ls -al /var/www/html | grep .git``` command is null.
+    - The second line clones the project content into /var/www/html directory.
+
+- Explain the output of the ```debug module``` **after running the playbook**.
+
+- For the third task, explain that the ```lineinfile``` module finds the file specified in the path value, searches for the regular expression specified in the ```regexp``` property, and replaces the matching line with the value of the ```line``` property. But this task is run only if the standard output of the first task is not "already cloned...". 
+
+- Append the content below into ```playbook.yml``` file.
+
+```yml
+    - selinux:
+        state: disabled    
+
+    - name: Restart service httpd
+      service:
+        name: httpd
+        state: restarted
+```
+
+- Explain that we have to disable the ```Security Enhanced Linux``` in order to be able to query a remote database.
+
+- Shortly explain that the SELinux is a Linux kernel security module that provides a mechanism for supporting access control security policies. 
+
+- Run the command below.
+
+```bash
+$ ansible-playbook playbook.yml
+```
+
+- Check if you can see the website on your browser.
