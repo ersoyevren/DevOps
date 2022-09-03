@@ -249,7 +249,7 @@ chmod 400 <your pem file>
 ```bash
 $ mkdir Provisioners && cd Provisioners && touch main.tf
 ```
-
+# alt komuttaki ~>4.0 ifadesi versiyonu 4 un en buyuk versiyonu calistiriyor. ornegin 4.23
 ```go
 terraform {
   required_providers {
@@ -263,7 +263,7 @@ terraform {
 provider "aws" {
   region = "us-east-1"
 }
-
+# kullandigimiz ec2 ya rol atadigimiz icin burada regionun altinda keylerimizi yazmaya gerek yok.
 resource "aws_instance" "instance" {
   ami = "ami-0c02fb55956c7d316"
   instance_type = "t2.micro"
@@ -277,6 +277,8 @@ resource "aws_instance" "instance" {
       command = "echo http://${self.public_ip} > public_ip.txt"
   
   }
+# command kisminda terminale girer gibi calistigimiz instance nin ip sini public_ip.txt adinda bir dosyaya yazdiriyor.
+# bunu command = "echo http://${aws_instance.instance.public_ip} > public_ip.txt" yazdirabilirim.
 
   connection {
     host = self.public_ip
@@ -284,6 +286,7 @@ resource "aws_instance" "instance" {
     user = "ec2-user"
     private_key = file("~/oliver.pem")
   }
+# terminalde chmode 400 oliver.pem yapmamiz da gerekiyor.
 
   provisioner "remote-exec" {
     inline = [

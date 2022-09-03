@@ -383,3 +383,40 @@ $ echo "USE ecomdb; show tables like 'products'; " | mysql
 ```
 
 
+## Part 6 - Install, Start and Enable Apache Web Server and Other Dependencies
+
+- Append the content below into the ```playbook.yml``` file 
+
+```yml
+- name: web server configuration
+  hosts: web_server
+  become: yes
+  tasks: 
+    - name: install the latest version of Git, Apache, Php, Php-Mysqlnd
+      package:
+        name: 
+          - git
+          - httpd
+          - php
+          - php-mysqlnd
+        state: latest
+```
+
+- Emphasize that the ```become``` property can also be used at the play level.
+
+- Explain that the ```package``` module has the functionality to employ whatever if the package manager is.
+
+- Emphasize that the ```Git, Apache Web Server, PHP, and Php-to-Mysql``` packages will be installed.
+
+- Append the content below into the ```playbook.yml``` file.
+
+```yml
+    - name: start the server and enable it
+      service:
+        name: httpd
+        state: started
+        enabled: yes
+```
+
+- Explain that this block of configuration is used to start and enable the Apache Web Server.
+
