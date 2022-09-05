@@ -578,6 +578,7 @@ resource "aws_s3_bucket" "tf-s3" {
   for_each = toset(var.users)
   bucket   = "example-tf-s3-bucket-${each.value}"
 }
+# listeyi sete cevirmesinin nedeni birden fazla kullanici adini tek gormek istemesi.
 
 resource "aws_iam_user" "new_users" {
   for_each = toset(var.users)

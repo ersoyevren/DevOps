@@ -60,6 +60,7 @@ terraform {
   }
 }
 ```
+# probider blogunu alip version.tf dosyasina yapistiriyoruz.
 
 - Go to the `variables.tf` and prepare your modules variables.
 
