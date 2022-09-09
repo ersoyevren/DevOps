@@ -320,6 +320,7 @@ terraform init
 
 terraform apply --auto-approve
 ```
+# bu calismadi. configure hatasi veriyor.
 
 - After checking the instance, you can terminate it.
 
