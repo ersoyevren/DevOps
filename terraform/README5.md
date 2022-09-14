@@ -46,6 +46,7 @@ At the end of the this hands-on training, students will be able to;
 
 ```bash
 cd && mkdir clarusway-modules && cd clarusway-modules && touch main.tf variables.tf outputs.tf versions.tf userdata.sh README.md .gitignore
+# bir klasor olusturup altinda dosyalar olusturuyoruz. genellikle yapiyi bu sekilde kuruyoruz.
 ```
 
 - Go to the `versions.tf` and copy the latest provider version from the terraform documentaion (https://registry.terraform.io/providers/hashicorp/aws/latest/docs).
@@ -60,7 +61,7 @@ terraform {
   }
 }
 ```
-# probider blogunu alip version.tf dosyasina yapistiriyoruz.
+# provider blogunu alip version.tf dosyasina yapistiriyoruz.
 
 - Go to the `variables.tf` and prepare your modules variables.
 
@@ -95,6 +96,8 @@ variable "docker-instance-ports" {
   default = [22, 80, 8080]
 }
 ```
+## eger burada default deger vermezsek modulu calistirdigimizda bizden bunu isteyecektir.
+# description yazarsak modulumuzu yukledigimizde (terraform registery orada gozukecektir.)
 
 - Go to the `main.tf` and prepare a config file to create an aws intance with amazon linux 2 ami (kernel 5.10).
 
@@ -135,6 +138,7 @@ data "template_file" "userdata" {
     server-name = var.server-name
   }
 }
+## userdata.sh dosyasi icindeki bilgileri bu sekilde alabiliyoruz.
 
 resource "aws_instance" "tfmyec2" {
   ami = data.aws_ami.amazon-linux-2.id
@@ -153,6 +157,8 @@ resource "aws_security_group" "tf-sec-gr" {
   tags = {
     Name = var.tag
   }
+  
+## dynamic block konusunu incele
 
   dynamic "ingress" {
     for_each = var.docker-instance-ports
@@ -207,7 +213,7 @@ chmod +x /usr/local/bin/docker-compose
 ```
 
 - Go to the `.gitignore` file and write the followings. 
-
+## bu kismi github push ettigimiz zaman hangi dosyalarin gitmesini istemiyorsak bunlari bu dosyanin icine yerlestiriyoruz.
 ```bash
 # Local .terraform directories
 **/.terraform/*
@@ -252,6 +258,7 @@ module "docker_instance" {
     key_name = "clarusway"
 }
 ```
+## ```hcl formati ile yayinladigimiz sayfada format degisikligi yapiyoruz.
 ---
 
 ### Create a Github repository for our terraform module
