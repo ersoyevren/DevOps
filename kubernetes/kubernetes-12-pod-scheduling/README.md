@@ -183,3 +183,78 @@ kubectl get po -o wide
 kubectl delete -f clarus-deploy.yaml 
 ```
 
+## Part 4 - nodeSelector
+
+- `nodeSelector` is the simplest recommended form of node selection constraint. nodeSelector is a field of PodSpec. It specifies a map of key-value pairs. For the pod to be eligible to run on a node, the node must have each of the indicated key-value pairs as labels (it can have additional labels as well). The most common usage is one key-value pair.
+
+- Let's learn how to use nodeSelector.
+
+- First, we will add a label to controlplane node with the following command. 
+
+```bash
+kubectl label nodes <node-name> <label-key>=<label-value>
+```
+
+- For example, let's assume that we have some applications that require different requirements. And we also have nodes that have different capacities. For this, we want to assign large pods to large nodes. For this, we add a label to controlplane node as below.
+
+```bash
+kubectl label nodes kube-master size=large
+```
+
+``nodeselector icin nodelara label ekliyoruz.``
+
+- We can check that the node now has a label with the following command. 
+
+```bash
+kubectl get nodes --show-labels
+# bu kod ile nodelardaki labels larimizi gorebiliriz.
+```
+
+- We can also use `kubectl describe node "nodename"` to see the full list of labels of the given node.
+
+- Now, we will update clarus-deploy.yaml as below. We just add `nodeSelector` field.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    environment: dev
+spec:
+  replicas: 15
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+      nodeSelector:         # This part is added.
+        size: large
+```
+
+- Create the clarus-deploy again.
+
+```bash
+kubectl apply -f clarus-deploy.yaml
+```
+
+- List the pods and notice that the pods are assigned to the only master node.
+
+```bash
+kubectl get po -o wide
+```
+
+- Delete the deployment.
+
+```bash
+kubectl delete -f clarus-deploy.yaml 
+```
+
