@@ -258,3 +258,169 @@ kubectl get po -o wide
 kubectl delete -f clarus-deploy.yaml 
 ```
 
+## Part 5 - Node Affinity
+
+- `Node affinity`  is conceptually similar to nodeSelector, but it greatly expands the types of constraints we can express. It allows us to constrain which nodes our pod is eligible to be scheduled on, based on labels on the node.
+
+- There are currently three types of node affinity:
+
+  - requiredDuringSchedulingIgnoredDuringExecution
+  - preferredDuringSchedulingIgnoredDuringExecution
+  - requiredDuringSchedulingRequiredDuringExecution
+
+- Let's analyze this long sentence.
+
+| Types                                           | DuringScheduling | DuringExecution |
+| ------------------------------------------------| ---------------- | --------------- |
+| requiredDuringSchedulingIgnoredDuringExecution  | required         | Ignored         |
+| preferredDuringSchedulingIgnoredDuringExecution | preferred        | Ignored         |
+| requiredDuringSchedulingRequiredDuringExecution | required         | required        |
+
+
+- The first one (requiredDuringSchedulingIgnoredDuringExecution) specifies rules that must be met for a pod to be scheduled onto a node (similar to nodeSelector but using a more expressive syntax), while the second one (preferredDuringSchedulingIgnoredDuringExecution) specifies preferences that the scheduler will try to enforce but will not guarantee. For example, we specify labels for nodes and nodeSelectors for pods.
+Later, the labels of the node are changed. If we use the first one (requiredDuringSchedulingIgnoredDuringExecution), the pod is not be scheduled. Let's see this.
+
+- We will update clarus-deploy.yaml as below. We will add an affinity field instead of nodeSelector.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    environment: dev
+spec:
+  replicas: 15
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: size
+                operator: In
+                values:
+                - large
+                - medium
+```
+
+- This node affinity rule says the pod can only be placed on a node with a label whose key is size and whose value is large or medium.
+
+- We have already labeled the controlplane node with `size=large` key-value pair. Let's see.
+
+```bash
+kubectl get nodes --show-labels
+```
+
+- Create the clarus-deploy.
+
+```bash
+kubectl apply -f clarus-deploy.yaml
+```
+
+- List the pods and notice that the pods are running on the controlplane.
+
+```bash
+kubectl get po -o wide
+```
+
+- Delete the deployment.
+
+```bash
+kubectl delete -f clarus-deploy.yaml 
+```
+
+- Edit the controlplane node and delete `size=large` line from `labels` field.
+
+```bash
+kubectl edit node  kube-master
+```
+
+- Create the clarus-deploy again.
+
+```bash
+kubectl apply -f clarus-deploy.yaml
+```
+
+- List the pods and notice that the pods are pending state. Because there is no node labeled with size=large.
+
+```bash
+kubectl get po -o wide
+```
+
+- Delete the deployment.
+
+```bash
+kubectl delete -f clarus-deploy.yaml 
+```
+
+- This time we will test `preferredDuringSchedulingIgnoredDuringExecution`. Update clarus-deploy.yaml as below. This time, we change `requiredDuringSchedulingIgnoredDuringExecution` with  `preferredDuringSchedulingIgnoredDuringExecution`.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    environment: dev
+spec:
+  replicas: 15
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:   # This field is changed.
+          - weight: 1                                        # This field is changed.         
+            preference:                                      # This field is changed.   
+              matchExpressions:
+              - key: size
+                operator: In
+                values:
+                - large
+                - medium
+```
+
+- Create the clarus-deploy again.
+
+```bash
+kubectl apply -f clarus-deploy.yaml
+```
+
+- List the pods and notice that the pods are running on both the master node and worker node. Because this time it specifies preferences that the scheduler will try to enforce but will not guarantee. If there is no node labeled, the scheduler will assign randomly.
+
+```bash
+kubectl get po -o wide
+```
+
+- Delete the deployment.
+
+```bash
+kubectl delete -f clarus-deploy.yaml 
+```
+
+- The `IgnoredDuringExecution` part of the names means that similar to how nodeSelector works, if labels on a node change at runtime such that the affinity rules on a pod are no longer met, the pod continues to run on the node. In the future, the Kubernetes community plans to offer `requiredDuringSchedulingRequiredDuringExecution` which will be identical to `requiredDuringSchedulingIgnoredDuringExecution` except that it will evict pods from nodes that cease to satisfy the pods' node affinity requirements.
+
+
