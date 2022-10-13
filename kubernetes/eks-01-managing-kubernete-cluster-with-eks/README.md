@@ -196,3 +196,62 @@ kubectl get node
 8. Show again the content of the $HOME directory including hidden files and folders. Find the ```config``` file inside ```.kube``` directory. Then show the content of the file.
 
 
+## Part 3 - Adding Worker Nodes to the Cluster
+
+1. Get to the cluster page that is recently created.
+
+2. Wait until seeing the ```ACTIVE``` status for the cluster.
+
+```bash
+$ aws eks describe-cluster --name <cluster-name> --query cluster.status
+  "ACTIVE"
+```
+
+3. On the cluster page, click on ```Compute``` tab and ```Add Node Group``` button.
+
+4. On the ```Configure node group``` page:
+
+    - Give a unique name for the managed node group.
+
+    - For the node's IAM Role, get to IAM console and create a new role with ```EC2 - Common``` use case having the policies of ```AmazonEKSWorkerNodePolicy, AmazonEC2ContainerRegistryReadOnly, AmazonEKS_CNI_Policy```.
+    
+        - ```Use case:    EC2 ```
+        - ```Policies: AmazonEKSWorkerNodePolicy, AmazonEC2ContainerRegistryReadOnly, AmazonEKS_CNI_Policy```
+    
+        <i>Give a short description about why we need these policies.</i>
+        <i>Explain the necessity of using dedicated IAM Role.</i>
+
+    -  Proceed to the next page.
+
+5. On the ```Set compute and scaling configuration``` page:
+ 
+    - Choose the appropriate AMI type for Non-GPU instances. (Amazon Linux 2 (AL2_x86_64))
+
+    - Choose ```t3.medium``` as the instance type.
+
+        <i>Explain why we can't use</i> ```t2.micro```.
+    - Choose appropriate options for other fields. (3 nodes are enough for maximum, 2 nodes for minimum and desired sizes.)
+
+    - Proceed to the next step.
+
+6. On the ```Specify networking``` page:
+
+    - Choose the subnets to launch your nodes.
+    
+    - Allow remote access to your nodes.
+    <i>Mention that if we don't allow remote access, it's not possible to enable it after the node group is created.</i>
+    
+    - Select your SSH Key to for the connection to your nodes.
+    
+    - You can also limit the IPs for the connection.
+
+    - Proceed to the next step. Review and create the ```Node Group```.
+
+7. Run the command below on your local.
+```bash
+kubectl get nodes --watch
+```
+
+8. Show the EC2 instances newly created.
+
+
