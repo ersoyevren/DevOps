@@ -156,3 +156,43 @@ $ aws eks list-clusters
     - Create the cluster.
 
 
+## Part 2 - Creating a kubeconfig file
+
+1. Give general descriptions about what ```config file``` is.
+
+2. Verify that you can see your cluster listed, when authenticated
+
+```bash
+$ aws eks list-clusters
+{
+  "clusters": [
+    "my-cluster"
+  ]
+}
+```
+
+3. Show the content of the $HOME directory including hidden files and folders. If there is a ```.kube``` directory, show what it has inside.  
+
+4. Run the command
+```bash
+aws eks --region <us-east-1> update-kubeconfig --name <cluster_name>
+``` 
+
+5. Explain what the above command does.
+
+6. Then run the command on your terminal
+```bash
+kubectl get svc
+```
+You should see the output below
+```bash
+NAME             TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+svc/kubernetes   ClusterIP   10.100.0.1   <none>        443/TCP   1m
+```
+7. Run the command below to show that there is no node for now.
+```bash
+kubectl get node
+```
+8. Show again the content of the $HOME directory including hidden files and folders. Find the ```config``` file inside ```.kube``` directory. Then show the content of the file.
+
+
