@@ -255,3 +255,54 @@ kubectl get nodes --watch
 8. Show the EC2 instances newly created.
 
 
+## Part 4 - Configuring Cluster Autoscaler
+
+1. Explain what ```Cluster Autoscaler``` is and why we need it.
+
+2. Create a policy with following content. You can name it as ClusterAutoscalerPolicy. 
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "autoscaling:DescribeAutoScalingGroups",
+                "autoscaling:DescribeAutoScalingInstances",
+                "autoscaling:DescribeLaunchConfigurations",
+                "autoscaling:DescribeTags",
+                "autoscaling:SetDesiredCapacity",
+                "autoscaling:TerminateInstanceInAutoScalingGroup",
+                "ec2:DescribeLaunchTemplateVersions"
+            ],
+            "Resource": "*",
+            "Effect": "Allow"
+        }
+    ]
+}
+```
+
+3. Attach this policy to the IAM Worker Node Role which is already in use.
+
+4. Deploy the ```Cluster Autoscaler``` with the following command.
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml
+```
+
+5. Add an annotation to the deployment with the following command.
+```bash
+kubectl -n kube-system annotate deployment.apps/cluster-autoscaler cluster-autoscaler.kubernetes.io/safe-to-evict="false"
+```
+
+6. Edit the Cluster Autoscaler deployment with the following command.
+```bash
+kubectl -n kube-system edit deployment.apps/cluster-autoscaler
+```
+This command will open the yaml file for your editting. Replace <CLUSTER NAME> value with your own cluster name, and add the following command option ```--skip-nodes-with-system-pods=false``` to the command section under ```containers``` under ```spec```. Save and exit the file by pressing ```:wq```. The changes will be applied.
+
+7. Find an appropriate version of your cluster autoscaler in the [link](https://github.com/kubernetes/autoscaler/releases). The version number should start with version number of the cluster Kubernetes version. For example, if you have selected the Kubernetes version 1.19, you should find something like ```1.19.6```.
+
+8. Then, in the following command, set the Cluster Autoscaler image tag as that version you have found in the previous step.
+```bash
+kubectl -n kube-system set image deployment.apps/cluster-autoscaler cluster-autoscaler=us.gcr.io/k8s-artifacts-prod/autoscaling/cluster-autoscaler:<YOUR-VERSION-HERE>
+```
+You can also replace ```us``` with ```asia``` or ```eu```.
