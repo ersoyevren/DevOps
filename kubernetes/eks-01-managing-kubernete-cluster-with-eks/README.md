@@ -306,3 +306,112 @@ This command will open the yaml file for your editting. Replace <CLUSTER NAME> v
 kubectl -n kube-system set image deployment.apps/cluster-autoscaler cluster-autoscaler=us.gcr.io/k8s-artifacts-prod/autoscaling/cluster-autoscaler:<YOUR-VERSION-HERE>
 ```
 You can also replace ```us``` with ```asia``` or ```eu```.
+
+
+## Part 5 - Deploying a Sample Application
+
+
+1. Create a .yml file in your local environment with the following content.
+
+```yaml
+kind: Namespace
+apiVersion: v1
+metadata:
+   name: my-namespace
+   labels:
+      app: container-info
+---
+apiVersion: v1
+kind: Service
+metadata:
+   name: container-info-svc
+   namespace: my-namespace
+   labels:
+      app: container-info
+spec:
+   type: LoadBalancer
+   ports:
+      - protocol: TCP
+        port: 3000
+        nodePort: 30300
+        targetPort: 80
+   selector:
+      app: container-info
+--- 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: container-info-deploy
+  namespace: my-namespace
+  labels:
+    app: container-info
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: container-info
+  template:
+    metadata:
+      labels:
+        app: container-info
+    spec:
+      containers:
+      - name: container-info
+        image: clarusway/container-info:1.0
+        ports:
+        - containerPort: 80
+```
+
+2. Deploy the application with following command.
+```bash
+kubectl apply -f <your-sample-app>.yaml
+```
+
+3. Run the command below.
+```bash
+kubectl -n my-namespace get svc
+```
+
+4. In case the service remains in pending state then analyze it. 
+
+```bash
+kubectl describe service container-info-svc -n my-namespace
+```
+Show the warning: "Error creating load balancer (will retry): failed to ensure load balancer for service default/guestbook: could not find any suitable subnets for creating the ELB"
+
+5. Go to this [link](https://aws.amazon.com/tr/premiumsupport/knowledge-center/eks-vpc-subnet-discovery/). Explain that it is necessary to tag selected subnets as follows:
+
+- Key: kubernetes.io/cluster/<cluster-name>
+- Value: shared
+
+6. Go to the VPC service on AWS console and select "subnets". On the ```Subnets``` page select "Tags" tab and add this tag:
+
+- Key: kubernetes.io/cluster/<cluster-name>
+- Value: shared
+
+
+7. Describe service object and analyze it.
+
+```bash
+kubectl describe service container-info-svc -n my-namespace
+```
+
+8. Get the ```External IP``` value from the previous command's output and visit that ip.
+
+9. For scale up edit deployment. Change "replicas=30" in .yaml file. Save the file.
+
+```bash
+kubectl edit deploy container-info-deploy -n my-namespace
+```
+10. Watch the pods while creating. Show that some pods are pending state.
+```bash
+kubectl get po -n my-namespace -w
+```
+11. Describe one of the pending pods. Show that there is no resource to run pods. So cluster-autoscaler scales out and create one more node.
+
+```bash
+kubectl describe pod container-info-deploy-xxxxxx -n my-namespace
+kubectl get nodes
+```
+
+12. Atfer clean-up `worker nodes` and `cluster`, delete the `LoadBalancer` manually.
