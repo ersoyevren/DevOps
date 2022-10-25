@@ -141,3 +141,170 @@ eksctl create cluster --help
 
 - Show the aws `eks service` on aws management console and explain `eksctl-my-cluster-cluster` stack on `cloudformation service`.
 
+## Part 3 - Dynamic Volume Provisionining
+
+- Firstly, check the StorageClass object in the cluster. 
+
+```bash
+kubectl get sc
+
+kubectl describe sc/gp2
+#storageclass in ozelliklerini goruyoruz.
+```
+
+- Create a StorageClass with the following settings.
+
+```bash
+vi storage-class.yaml
+```
+
+```yaml
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: aws-standard
+provisioner: kubernetes.io/aws-ebs
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  type: gp2
+  fsType: ext4           
+```
+
+
+```bash
+kubectl apply -f storage-class.yaml
+```
+
+- Explain the default storageclass
+
+```bash
+kubectl get storageclass
+NAME             PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+aws-standard     kubernetes.io/aws-ebs   Delete          WaitForFirstConsumer   false                  37s
+gp2 (default)    kubernetes.io/aws-ebs   Delete          WaitForFirstConsumer   false                  112m
+```
+
+- Create a persistentvolumeclaim with the following settings and show that new volume is created on aws management console.
+
+```bash
+vi clarus-pv-claim.yaml
+```
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: clarus-pv-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 3Gi
+  storageClassName: aws-standard
+```
+
+```bash
+kubectl apply -f clarus-pv-claim.yaml
+```
+
+- List the pv and pvc and explain the connections.
+
+```bash
+kubectl get pv,pvc
+```
+- You will see an output like this
+
+```text
+NAME                                    STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+persistentvolumeclaim/clarus-pv-claim   Pending                                      aws-standard   11s
+```
+
+- Create a pod with the following settings.
+
+```bash
+vi pod-with-dynamic-storage.yaml
+```
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-aws
+  labels:
+    app : web-nginx
+spec:
+  containers:
+  - image: nginx:latest
+    ports:
+    - containerPort: 80
+    name: test-aws
+    volumeMounts:
+    - mountPath: /usr/share/nginx/html
+      name: aws-pd
+  volumes:
+  - name: aws-pd
+    persistentVolumeClaim:
+      claimName: clarus-pv-claim
+```
+
+```bash
+kubectl apply -f pod-with-dynamic-storage.yaml
+```
+
+- Enter the pod and see that ebs is mounted to  /usr/share/nginx/html path.
+
+```bash
+kubectl exec -it test-aws -- bash
+#261 deki df -h nedir
+#lsblk komutuyla da gorulebiliyor.
+```
+- You will see an output like this
+```text
+root@test-aws:/# df -h
+Filesystem      Size  Used Avail Use% Mounted on
+overlay          80G  3.5G   77G   5% /
+tmpfs            64M     0   64M   0% /dev
+tmpfs           2.0G     0  2.0G   0% /sys/fs/cgroup
+/dev/xvda1       80G  3.5G   77G   5% /etc/hosts
+shm              64M     0   64M   0% /dev/shm
+/dev/xvdcj      2.9G  9.1M  2.9G   1% /usr/share/nginx/html
+tmpfs           2.0G   12K  2.0G   1% /run/secrets/kubernetes.io/serviceaccount
+tmpfs           2.0G     0  2.0G   0% /proc/acpi
+tmpfs           2.0G     0  2.0G   0% /proc/scsi
+tmpfs           2.0G     0  2.0G   0% /sys/firmware
+root@test-aws:/#
+```
+
+- Delete the storageclass that we create.
+
+```bash
+kubectl get storageclass
+```
+- You will see an output like this
+
+```text
+NAME            PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+aws-standard    kubernetes.io/aws-ebs   Delete          WaitForFirstConsumer   false                  71m
+gp2 (default)   kubernetes.io/aws-ebs   Delete          WaitForFirstConsumer   false                  4h10m
+```
+
+```bash
+kubectl delete storageclass aws-standard
+```
+
+```bash
+kubectl get storageclass
+```
+
+- You will see an output like this
+
+```text
+NAME                     PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE     ALLOWVOLUMEEXPANSION   AGE
+gp2 (default)            kubernetes.io/aws-ebs   Delete          WaitForFirstConsumer  false                  52m
+```
+
+- Delete the pod
+
+```bash
+kubectl delete -f pod-with-dynamic-storage.yaml
+```
+
