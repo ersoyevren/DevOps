@@ -160,3 +160,41 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 - Select `OK` option
 
 
+## Part 5 - Creating First Jenkins Job
+
+- We will create a job in Jenkins which picks up a simple "Hello World" bash script and runs it. The freestyle build job is a highly flexible and easy-to-use option. To create a Jenkins freestyle job;
+
+  - Open your Jenkins dashboard and click on `New Item` to create a new job item.
+
+  - Enter `my-first-job` then select `free style project` and click `OK`.
+
+  - Enter `My first jenkins job` in the description field.
+
+  - Explain `Source Code Management`, `Build Triggers`,  `Build Environment`, `Build`, `Post-build Actions` tabs.
+
+    ```text
+    1. Source Code Management Tab : optional SCM, such as CVS or Subversion where your source code resides.
+    2. Build Triggers : Optional triggers to control when Jenkins will perform builds.
+    3. Build Environment: Some sort of build script that performs the build 
+    (ant, maven, shell script, batch file, etc.) where the real work happens
+    4. Build : Optional steps to collect information out of the build, 
+    such as archiving the artifacts and/or recording javadoc and test results.
+    5. Post-build Actions : Optional steps to notify other people/systems 
+    with the build result, such as sending e-mails, IMs, updating issue tracker, etc.
+    ```
+
+  - Go to `Build` section and choose "Execute Shell Command" step from `Add build step` dropdown menu.
+
+  - Write down just `echo "Hello World, This is my first job"` to execute shell command, in text area shown.
+
+  - Click `apply` and `save`  buttons.
+
+- On the Project job page, click to `Build now`.
+
+- Show and explain the result of this build action under the `Build History`
+
+  - Click to the build number to reach build page.
+
+  - Show the console results from `Console Output`.
+
+
