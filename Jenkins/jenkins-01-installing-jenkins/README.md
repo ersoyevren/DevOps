@@ -198,3 +198,95 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
   - Show the console results from `Console Output`.
 
 
+## Part 6 - Creating a Simple Pipeline with Jenkins
+
+- Go to the Jenkins dashboard and click on `New Item` to create a pipeline.
+
+- Enter `simple-pipeline` then select `Pipeline` and click `OK`.
+
+- Enter `My first simple pipeline` in the description field.
+
+- Go to the `Pipeline` section, enter following script, then click `apply` and `save`.
+
+```text
+pipeline {
+    agent any
+    stages {
+        stage('build') {
+            steps {
+                echo "Clarusway_Way to Reinvent Yourself"
+                sh 'echo second step'
+                sh 'echo another step'                
+                sh '''
+                echo 'Multiline'
+                echo 'Example'
+                '''
+                echo 'not using shell'
+            }
+        }
+    }
+}
+```
+
+- Go to the project page and click `Build Now`.
+
+- Explain the built results.
+
+- Explain the pipeline script.
+
+## Part 7 - Creating a Jenkins Pipeline with Jenkinsfile
+
+- Create a public project repository `jenkinsfile-pipeline-project` on your GitHub account.
+
+- Clone the `jenkinsfile-pipeline-project` repository on local computer.
+
+```bash
+git clone <your-repo-url>
+```
+- Create a `Jenkinsfile` within your local `jenkinsfile-pipeline-project` repo and save following pipeline script. Consider that filename 'Jenkinsfile' is case sensitive.
+
+```groovy
+pipeline {
+    agent any
+    stages {
+        stage('build') {
+            steps {
+                echo "Clarusway_Way to Reinvent Yourself"
+                sh 'echo using shell within Jenkinsfile'
+                echo 'not using shell in the Jenkinsfile'
+            }
+        }
+    }
+}
+```
+
+- Commit and push the local changes to update the remote repo on GitHub.
+
+```bash
+git add .
+git commit -m 'added Jenkinsfile'
+git push
+```
+
+- Go to the Jenkins dashboard and click on `New Item` to create a pipeline.
+
+- Enter `pipeline-from-jenkinsfile` then select `Pipeline` and click `OK`.
+
+- Enter `Simple pipeline configured with Jenkinsfile` in the description field.
+
+- Go to the `Pipeline` section, and select `Pipeline script from SCM` in the `Definition` field.
+
+- Select `Git` in the `SCM` field.
+
+- Enter URL of the project repository, and let others be default.
+
+```text
+https://github.com/<your_github_account_name>/jenkinsfile-pipeline-project/
+```
+
+- Click `apply` and `save`. Note that the script `Jenkinsfile` should be placed under root folder of repo.
+
+- Go to the Jenkins project page and click `Build Now`.
+
+- Explain the role of `Jenkinsfile` and the built results.
+
