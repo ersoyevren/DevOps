@@ -182,3 +182,53 @@ git push
 
 
 
+## Part 3 - Configuring Jenkins Pipeline with GitHub Webhook to Run the Python Code
+
+- To build the `python` code with Jenkins pipeline using the `Jenkinsfile` and `GitHub Webhook`, we will leverage from the same job created in Part 2 (named as `pipeline-with-jenkinsfile-and-webhook`). 
+
+- To accomplish this task, we need;
+
+  - a python code to build
+
+  - a python environment to run the pipeline stages on the python code
+
+  - a Jenkinsfile configured for an automated build on our repo
+
+
+- Create a python file on the `jenkinsfile-pipeline-project` local repository, name it as `pipeline.py`, add coding to print `My first python job which is run within Jenkinsfile.` and save.
+
+```python
+print('My first python job which is run within Jenkinsfile.')
+```
+
+- Update the `Jenkinsfile` with the following pipeline script, and explain the changes.
+
+```groovy
+pipeline {
+    agent any
+    stages {
+        stage('run') {
+            steps {
+                echo 'Clarusway_Way to Reinvent Yourself'
+                sh 'python --version'
+                sh 'python pipeline.py'
+            }
+        }
+    }
+}
+```
+
+
+- Commit and push the changes to the remote repo on GitHub.
+
+```bash
+git add .
+git commit -m 'updated jenkinsfile and added pipeline.py'
+git push
+```
+
+- Observe the new built triggered with `git push` command on the Jenkins project page.
+
+
+
+
