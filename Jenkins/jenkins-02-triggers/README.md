@@ -232,3 +232,28 @@ git push
 
 
 
+## Part 4 - Creating a Pipeline with Poll SCM
+
+- Go to the Jenkins dashboard and click on `New Item` to create a pipeline.
+
+- Enter `jenkinsfile-pipeline-pollSCM` then select `Pipeline` and click `OK`.
+
+- Enter `This is a pipeline project with pollSCM` in the description field.
+
+- We will use same github repo project in Part 2 (named as `jenkinsfile-pipeline-project`).
+
+- Go to the `Pipeline` section.
+  - for definition, select `Pipeline script from SCM`
+  - for SCM, select `Git`
+    - for `Repository URL`, select `https://github.com/<your-github-account-name>/jenkinsfile-pipeline-project/`, show the `Jenkinsfile` here.
+    - approve that the `Script Path` is `Jenkinsfile`
+- `Save` and `Build Now` and observe the behavior.
+
+- Go to the the `Configure` and skip to the `Build Triggers` section
+  - Select Poll SCM, and enter `* * * * *` (5 stars)
+- `Save` the configuration.
+
+- Go to the GitHub repo and modify some part in the `Jenkinsfile` and commit.
+
+- Observe the auto build action at Jenkins job.
+
