@@ -176,3 +176,101 @@ git push
 
 - Explain the role of java environment, `Jenkinsfile` and GitHub Webhook in this automation.
 
+## Part 5 - Configuring Jenkins Pipeline with GitHub Webhook to Build the a Java Maven Project
+
+- To build the `java maven project` with Jenkins pipeline using the `Jenkinsfile` and `GitHub Webhook`. To accomplish this task, we need;
+
+  - a java code to build
+
+  - a java environment to run the build stages on the java code
+
+  - a maven environment to run the build stages on the java code
+
+  - a Jenkinsfile configured for an automated build on our repo
+
+- Create a public project repository `jenkins-maven-project` on your GitHub account.
+
+- Clone the `jenkins-maven-project` repository on local computer.
+
+- Copy the files given within the hands-on folder [hello-app](./hello-app)  and paste under the `jenkins-maven-project` GitHub repo folder.
+
+- Go to your Github `jenkins-maven-project` repository page and click on `Settings`.
+
+- Click on the `Webhooks` on the left hand menu, and then click on `Add webhook`.
+
+- Copy the Jenkins URL from the AWS Management Console, paste it into `Payload URL` field, add `/github-webhook/` at the end of URL, and click on `Add webhook`.
+
+```text
+http://ec2-54-144-151-76.compute-1.amazonaws.com:8080/github-webhook/
+```
+
+- Go to the Jenkins dashboard and click on `New Item` to create a pipeline.
+
+- Enter `pipeline-with-jenkinsfile-and-webhook-for-maven-project` then select `Pipeline` and click `OK`.
+
+- Enter `Simple pipeline configured with Jenkinsfile and GitHub Webhook for Maven project` in the description field.
+
+- Put a checkmark on `GitHub Project` under `General` section, enter URL of the project repository.
+
+```text
+https://github.com/<your_github_account_name>/jenkins-maven-project/
+```
+
+- Put a checkmark on `GitHub hook trigger for GITScm polling` under `Build Triggers` section.
+
+- Go to the `Pipeline` section, and select `Pipeline script from SCM` in the `Definition` field.
+
+- Select `Git` in the `SCM` field.
+
+- Enter URL of the project repository, and let others be default.
+
+```text
+https://github.com/<your_github_account_name>/jenkins-maven-project/
+```
+
+- Click `apply` and `save`. Note that the script `Jenkinsfile` should be placed under root folder of repo.
+
+- Create a `Jenkinsfile` with the following pipeline script, and explain the script.
+
+- For native structured Jenkins Server
+
+```groovy
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                sh 'mvn -f hello-app/pom.xml -B -DskipTests clean package'
+            }
+            post {
+                success {
+                    echo "Now Archiving the Artifacts....."
+                    archiveArtifacts artifacts: '**/*.jar'
+                }
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'mvn -f hello-app/pom.xml test'
+            }
+            post {
+                always {
+                    junit 'hello-app/target/surefire-reports/*.xml'
+                }
+            }
+        }
+    }
+}
+```
+
+- Commit and push the changes to the remote repo on GitHub.
+
+```bash
+git add .
+git commit -m 'added jenkinsfile and maven project'
+git push
+```
+
+- Observe the new built triggered with `git push` command on the Jenkins project page.
+
+- Explain the role of the docker image of maven, `Jenkinsfile` and GitHub Webhook in this automation.
