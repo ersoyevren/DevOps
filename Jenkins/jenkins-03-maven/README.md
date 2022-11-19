@@ -118,3 +118,61 @@ sudo yum install git -y
 
 - Observe the Console Output
 
+## Part 4 - Configuring Jenkins Pipeline with GitHub Webhook to Build the Java Code
+
+- To build the `java` code with Jenkins pipeline using the `Jenkinsfile` and `GitHub Webhook`, we will leverage from the same job created in *** Hands-on-02 Part 2*** (named as `pipeline-with-jenkinsfile-and-webhook`). To accomplish this task, we need;
+
+  - a java code to build
+
+  - a java environment to run the build stages on the java code
+
+  - a Jenkinsfile configured for an automated build on our repo
+
+- Create a java file on the `jenkins-pipeline-project` local repository(we have created in *** Hands-on-02 Part 2*** ), name it as `Hello.java`, add coding to print `Hello from Java` and save.
+
+```java
+public class Hello {
+
+    public static void main(String[] args) {
+        System.out.println("Hello from Java");
+    }
+}
+```
+
+- Since the Jenkins Server is running on Java platform, we can leverage from the already available java environment.
+
+- Update the `Jenkinsfile` with the following pipeline script, and explain the changes.
+
+
+```groovy
+pipeline {
+    agent any
+    stages {
+        stage('build') {
+            steps {
+                echo 'Compiling the java source code'
+                sh 'javac Hello.java'
+            }
+        }
+        stage('run') {
+            steps {
+                echo 'Running the compiled java code.'
+                sh 'java Hello'
+            }
+        }
+    }
+}
+```
+
+- Commit and push the changes to the remote repo on GitHub.
+
+```bash
+git add .
+git commit -m 'updated jenkinsfile and added Hello.java'
+git push
+```
+
+- Observe the new built triggered with `git push` command on the Jenkins project page.
+
+- Explain the role of java environment, `Jenkinsfile` and GitHub Webhook in this automation.
+
