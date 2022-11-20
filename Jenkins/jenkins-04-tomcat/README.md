@@ -80,3 +80,116 @@ unzip apache-tomcat-*.zip
 sudo mv apache-tomcat-9.0.63 /opt/tomcat
 ```
 
+## Part 4 - Configure tomcat
+
+- Now Change Tomcat Server Port
+
+- Go to /opt/tomcat/conf/server.xml file
+
+- Search for `Connector` and verify/change the Port Value, save the file.
+
+```bash
+    <Connector port="8080" protocol="HTTP/1.1"
+               connectionTimeout="20000"
+               redirectPort="8443" />
+```
+
+- Change Permission of Scripts in `/opt/tomcat/bin`
+
+```bash
+cd /opt/tomcat/bin
+ls -la
+sudo chmod +x *
+```
+
+- Set Credentials of Tomcat that Jenkins will use.
+
+```bash
+cd /opt/tomcat/conf
+```
+- Update `tomcat-users.xml` file.
+
+- `manager-script` & `admin-gui` are needed for jenkins to access tomcat.
+
+- Set roles as `manager-script` & `admin-gui` and set password to tomcat as follows:
+
+```bash
+  <role rolename="manager-script"/>
+  <role rolename="admin-gui"/>
+  <user username="tomcat" password="tomcat" roles="manager-script,admin-gui"/>
+```
+
+- Note : Don't forget to remove the xml comment bloks `<!--` and `-->`. Delete these enclosing lines.
+
+- To configure Tomcat server we need to modify the content of the context.xml. Be careful there are two of this file. We have to modify both of them.
+
+- Go to the `/opt/tomcat/webapps/host-manager/META-INF/` and edit file `context.xml`. Actually commenting out the tagged `CookieProcessor` and `Valve` parts.
+
+```bash
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<Context antiResourceLocking="false" privileged="true" >
+	<!--
+  <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor"
+                   sameSiteCookies="strict" />
+  <Valve className="org.apache.catalina.valves.RemoteAddrValve"
+         allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1" />
+	-->
+  <Manager sessionAttributeValueClassNameFilter="java\.lang\.(?:Boolean|Integer|Long|Number|String)|org\.apache\.catalina\.filters\.CsrfPreventionFilter\$LruCache(?:\$1)?|java\.util\.(?:Linked)?HashMap"/>
+</Context>
+```
+
+- Go to the `/opt/tomcat/webapps/manager/META-INF/` and edit file `context.xml`. Actually commenting out the tagged `CookieProcessor` and `Valve` parts.
+
+```bash
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<Context antiResourceLocking="false" privileged="true" >
+<!--
+  <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor"
+	sameSiteCookies="strict" />
+  <Valve className="org.apache.catalina.valves.RemoteAddrValve"
+         allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1" />
+-->
+  <Manager sessionAttributeValueClassNameFilter="java\.lang\.(?:Boolean|Integer|Long|Number|String)|org\.apache\.catalina\.filters\.CsrfPreventionFilter\$LruCache(?:\$1)?|java\.util\.(?:Linked)?HashMap"/>
+</Context>
+```
+
+
+- Restart the tomcat server
+
+```bash
+/opt/tomcat/bin/shutdown.sh
+/opt/tomcat/bin/startup.sh
+```
+
