@@ -61,3 +61,44 @@ At the end of the this hands-on training, students will be able to;
 
 - Observe the Console Output
 
+## Part 2 - Deploy Application to Staging Environment
+
+- Select `New Item`
+
+- Enter name as `Deploy-Application-Staging-Environment`
+
+- Select `Free Style Project`
+
+- For Description : `This Job will deploy a Java-Tomcat-Sample to the staging environment.`
+
+- At `General Tab`, select Discard old builds, `Strategy` is `Log Rotation`, and for `Days to keep builds` enter `5` and `Max # of builds to keep` enter `3`.
+
+- At `Build Environments` section, select `Delete workspace before build starts` and `Add timestamps to the Console Output` options.
+
+- For `Build`, select `Copy artifact from another project`
+
+  - Select `Project name` as `build-web-application`
+  - Select `Latest successful build` for `Which build`
+  - Check `Stable build only`
+  - For `Artifact to copy`, fill in `**/*.war`
+
+- For `Add post-build action`, select `Deploy war/ear to a container`
+  - for `WAR/EAR files`, fill in `**/*.war`.
+  - for `Context path`, fill in `/`.
+  - for `Containers`, select `Tomcat 9.x Remote`.
+  - Add credentials
+    - Add -> Jenkins
+      - Add `username` and `password` as `tomcat/tomcat`.
+    - From `Credentials`, select `tomcat/*****`.
+  - for `Tomcat URL`, select `private ip` of staging tomcat server like `http://172.31.20.75:8080`.
+
+- Click on `Save`.
+
+- Go to the `Deploy-Application-Staging-Environment` 
+
+- Click `Build Now`.
+
+- Explain the built results.
+
+- Open the staging server url with port # `8080` and check the results.
+
