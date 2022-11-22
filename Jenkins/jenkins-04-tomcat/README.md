@@ -193,3 +193,60 @@ cd /opt/tomcat/conf
 /opt/tomcat/bin/startup.sh
 ```
 
+## Part 5 - Auto start of Tomcat server at boot
+
+- In able to auto start Tomcat server at boot, we have to make it a `service`. Service is process that starts with operating system and runs in the background without interacting with the user.
+
+- Service files are located in /etc/systemd/system.
+
+- Go to /etc/systemd/system folder.
+
+```bash
+cd /etc/systemd/system
+```
+
+- In able to declare a service "unit file" must be created. Create a `tomcat.service` file.
+
+```bash
+sudo vi tomcat.service
+```
+
+- Copy and paste this code in "tomcat.service" file.
+```
+[Unit]
+Description=Apache Tomcat Web Application Container
+After=syslog.target network.target
+
+[Service]
+Type=forking
+
+Environment=JAVA_HOME=/usr/lib/jvm/jre
+Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid
+Environment=CATALINA_HOME=/opt/tomcat
+Environment=CATALINA_BASE=/opt/tomcat
+Environment='CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC'
+Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom'
+
+ExecStart=/opt/tomcat/bin/startup.sh
+ExecStop=/bin/kill -15 $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+```
+
+- Save and exit.
+
+- Enable Tomcat server.
+
+```bash
+sudo systemctl enable tomcat
+```
+
+- Start Tomcat server.
+
+```bash
+sudo systemctl start tomcat
+```
+
+- Open your browser, get your Tomcat server ec2 instance Public IPv4 DNS and paste it at address bar with 8080. 
+"http://[ec2-public-dns-name]:8080"

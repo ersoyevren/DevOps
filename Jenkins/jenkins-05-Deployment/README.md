@@ -1,0 +1,63 @@
+# Hands-on Jenkins-05 : Deploying Application to Staging/Production Environment with Jenkins
+
+Purpose of the this hands-on training is to learn how to deploy applications to Staging/Production Environment with Jenkins.
+
+## Learning Outcomes
+
+At the end of the this hands-on training, students will be able to;
+
+- deploy an application to Staging/Production Environment with Jenkins
+
+- automate a Maven project as Pipeline.
+
+
+## Outline
+
+- Part 1 - Building Web Application
+
+- Part 2 - Deploy Application to Staging Environment
+
+- Part 3 - Update the application and deploy to the staging environment
+
+- Part 4 - Deploy application to production environment
+
+- Part 5 - Automate Existing Maven Project as Pipeline with Jenkins
+
+## Part 1 - Building Web Application
+
+- Fork the `https://github.com/JBCodeWorld/java-tomcat-sample.git` repo.
+
+- Select `New Item`
+
+- Enter name as `build-web-application`
+
+- Select `Free Style Project`
+
+- For Description : `This Job is packaging Java-Tomcat-Sample Project and creates a war file.`
+
+- At `General Tab`, select Discard old builds, `Strategy` is `Log Rotation`, and for `Days to keep builds` enter `5` and `Max # of builds to keep` enter `3`.
+
+- From `Source Code Management` part select `Git`
+
+- Enter `https://github.com/<github-user-name>/java-tomcat-sample.git` for `Repository URL`.
+
+- It is public repo, no need for `Credentials`.
+
+- At `Build Environments` section, select `Delete workspace before build starts` and `Add timestamps to the Console Output` options.
+
+- For `Build`, select `Invoke top-level Maven targets`
+
+  - For `Maven Version`, select the pre-defined maven, `maven-3.8.4` 
+  - For `Goals`, write `clean package`
+  - POM: `pom.xml`
+
+- At `Post-build Actions` section,
+  - Select `Archive the artifacts`
+  - For `Files to archive`, write `**/*.war` 
+
+- Finally `Save` the job.
+
+- Click `Build Now` option.
+
+- Observe the Console Output
+
