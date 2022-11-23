@@ -102,3 +102,29 @@ At the end of the this hands-on training, students will be able to;
 
 - Open the staging server url with port # `8080` and check the results.
 
+## Part 3 - Update the application and deploy to the staging environment
+
+-  Go to the `build-web-application`
+   -  Select `Configure`
+   -  Select the `Post-build Actions` tab
+   -  From `Add post-build action`, `Build othe projects`
+      -  For `Projects to build`, fill in `Deploy-Application-Staging-Environment`
+      -  And select `Trigger only if build is stable` option.
+   - Go to the `Build Triggers` tab
+     - Select `Poll SCM`
+       - In `Schedule`, fill in `* * * * *` (5 stars)
+         - You will see the warning `Do you really mean "every minute" when you say "* * * * *"? Perhaps you meant "H * * * *" to poll once per hour`
+  
+   - `Save` the modified job.
+
+   - At `Project build-web-application`  page, you will see `Downstream Projects` : `Deploy-Application-Staging-Environment`
+
+
+- Update the web site content, and commit to the GitHub.
+
+- Go to the  `Project build-web-application` and `Deploy-Application-Staging-Environment` pages and observe the auto build & deploy process.
+
+- Explain the built results.
+
+- Open the staging server url with port # `8080` and check the results.
+
