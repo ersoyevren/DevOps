@@ -128,3 +128,117 @@ At the end of the this hands-on training, students will be able to;
 
 - Open the staging server url with port # `8080` and check the results.
 
+## Part 4 - Deploy application to production environment
+
+- Go to the dashboard
+
+- Select `New Item`
+
+- Enter name as `Deploy-Application-Production-Environment`
+
+- Select `Free Style Project`
+
+- For Description : `This Job will deploy a Java-Tomcat-Sample to the deployment environment.`
+
+- At `General Tab`, select `Strategy` and for `Days to keep builds` enter `5` and `Max # of builds to keep` enter `3`.
+
+- At `Build Environments` section, select `Delete workspace before build starts` and `Add timestamps to the Console Output` and `Color ANSI Console Outputoptions`.
+
+- For `Build`, select `Copy artifact from another project`
+
+  - Select `Project name` as `build-web-application`
+  - Select `Latest successful build` for `Which build`
+  - Check `Stable build only`
+  - For `Artifact to copy`, fill in `**/*.war`
+
+- For `Add post-build action`, select `Deploy war/ear to a container`
+  - for `WAR/EAR files`, fill in `**/*.war`.
+  - for `Context path`, filll in `/`.
+  - for `Containers`, select `Tomcat 9.x Remote`.
+  - From `Credentials`, select `tomcat/*****`.
+  - for `Tomcat URL`, select `private ip` of production tomcat server like `http://172.31.28.5:8080`.
+
+- Click on `Save`.
+
+- Click `Build Now`.
+
+## Part 5 - Automate Existing Maven Project as Pipeline with Jenkins
+
+- Go to the Jenkins dashboard and click on `New Item` to create a pipeline.
+
+- Enter `build-web-application-code-pipeline` then select `Pipeline` and click `OK`.
+
+- Enter `This code pipeline Job is to package the maven project` in the description field.
+
+- At `General Tab`, select `Discard old build`,
+  -  select `Strategy` and 
+     -  for `Days to keep builds` enter `5` and 
+     -  `Max # of builds to keep` enter `3`.
+
+- At `Advanced Project Options: Pipeline` section
+
+  - for definition, select `Pipeline script from SCM`
+  - for SCM, select `Git`
+    - for `Repository URL`, select `https://github.com/<github-user-name>-tomcat-sample.git`, show the `Jenkinsfile` here.
+    - for `Branch Specifier`, enter `*/main` as the GitHub branch is like that.
+    - approve that the `Script Path` is `Jenkinsfile`
+- `Save` and `Build Now` and observe the behavior.
+
+- Copy the existing 2 jobs ( `Deploy-Application-Staging-Environment` , `Deploy-Application-Production-Environment` ) and modify them for pipeline.
+
+- Go to dashbord click on `New Item` to copy `Deploy-Application-Staging-Environment`
+
+- For name, enter `deploy-application-staging-environment-pipeline`
+
+- At the bottom, `Copy from`, enter `Deploy-Application-Staging-Environment`
+
+- Click `OK`, and `Save`
+
+- Go to dashbord click on `New Item` to copy `Deploy-Application-Production-Environment`
+
+- For name, enter `deploy-application-production-environment-pipeline`
+
+- At the bottom, `Copy from`, enter `Deploy-Application-Production-Environment`
+
+- Click `OK`, and `Save`
+
+
+- Go to the `deploy-application-staging-environment-pipeline` job
+
+- Find the `Build` section,
+  - for `Project name`, enter `build-web-application-code-pipeline` 
+  - select `Latest successful build`
+
+- `Save` the job
+
+- Go to the `deploy-application-production-environment-pipeline` job
+
+- Find the `Build` section,
+  - for `Project name`, enter `build-web-application-code-pipeline` 
+  - select `Latest successful build`
+
+- `Save` the job
+
+- Now, go to the `build-web-application-code-pipeline` job and update the `Jenkinsfile` to include last 2 stages. For this purpose, add these 2 stages in `Jenkinsfile` like below:
+
+```text
+        stage('Deploy to Staging Environment'){
+            steps{
+                build job: 'deploy-application-staging-environment-pipeline'
+
+            }
+            
+        }
+        stage('Deploy to Production Environment'){
+            steps{
+                timeout(time:5, unit:'DAYS'){
+                    input message:'Approve PRODUCTION Deployment?'
+                }
+                build job: 'deploy-application-production-environment-pipeline'
+            }
+        }
+```
+
+- Note: You can also use updated `Jenkinsfile2` file instead of updating `Jenkinsfile`.
+
+- Go to the `build-web-application-code-pipeline` then select `Build Now` and observe the behaviors.
