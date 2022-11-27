@@ -141,3 +141,25 @@ wget http://<jenkins_master_ip>:8080/jnlpJars/slave.jar
 
 - Go to Jenkins dashboard. Check master and slave nodes on the left hand menu. 
 
+## Part 2 - Free Style Project on Slave Node
+
+- Open your Jenkins dashboard and click on `New Item` to create a new job item.
+
+- Enter `slave-job` then select `free style project` and click `OK`.
+
+  - Enter `My first simple free style job on slave node` in the description field.
+
+  - Find the `General` section, click "Restrict where this project can be run" and enter `Linux` for "Label Expression"
+
+  - Go to `Build` section and choose "Execute Shell Command" step from `Add build step` dropdown menu.
+
+  - Write down just ``echo "Hello World, This is a job for slave node"` to execute shell command, in text area shown.
+
+  - Click `apply` and `save`  buttons.
+
+- Go to `slave job`.
+
+- Select `Build Now` on the left hand menu
+
+- Check "Build Queue" section to see build process running on slave node on the left hand menu. 
+
