@@ -96,3 +96,168 @@ tree
 - Explain that ```dependencyManagement``` section in the pom file will import multiple dependencies with compatible versions.  
 
 
+## Part 3 - Run Maven Commands
+
+
+>### mvn compile
+ 
+- Run the command below.
+
+```bash
+mvn compile
+```
+
+- Go into the folder ```<project-root>/target/classes/``` and show the class file.
+
+- Run the command below to show how to test a Maven project.
+
+
+>### mvn clean test
+
+```bash
+mvn clean test
+```
+
+- Show that there is a new folder named ```target``` in the project root. 
+
+- inspect the target folder with tree command.
+
+- Show the content of the file ```<project-root>/target/surefire-report/com.clarus.maven.AppTest.txt``` as the output of the test.
+
+
+>### mvn package
+
+- Run the command below.
+
+```bash
+mvn clean package
+```
+
+- Go into the folder ```<project-root>/target/``` and show the ```maven-experiment-1.0-SNAPSHOT.jar``` file as the output of the ```mvn package``` command.
+
+- Run the command below to start the application.
+
+```bash
+java -jar maven-experiment-1.0-SNAPSHOT.jar
+```
+
+- Explain the error in the standard output. 
+    - Maven's jar file is not an executable jar file. The jar file does not have both the ```Main Class``` and the necessary packages to run the application. 
+
+- Add the plugin below to the pom file and run ```mvn clean package``` command again.
+
+```xml
+<build>
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-assembly-plugin</artifactId>
+      <executions>
+          <execution>
+              <phase>package</phase>
+              <goals>
+                  <goal>single</goal>
+              </goals>
+              <configuration>
+                  <archive>
+                  <manifest>
+                      <mainClass>
+                          com.clarus.maven.App
+                      </mainClass>
+                  </manifest>
+                  </archive>
+                  <descriptorRefs>
+                      <descriptorRef>jar-with-dependencies</descriptorRef>
+                  </descriptorRefs>
+              </configuration>
+          </execution>
+      </executions>
+    </plugin>
+  </plugins>
+</build>
+```
+
+```bash
+mvn clean package
+```
+
+
+>### Run The Application
+
+- Now, open up a fresh terminal on your local computer and run the command below.
+
+```bash
+scp -i <path-to-your-pem-file> -r <path-to-your-home-directory>/.aws ec2-user@<IP-of-your-instance>:/home/ec2-user/
+```
+
+- Check if the the credentials are transferred to EC2 instance.
+
+- Go into your target folder.
+
+- Run the command below to start the application. This time we are running the executable jar file with suffix ```jar-with-dependencies```.
+
+```bash
+java -jar maven-experiment-1.0-SNAPSHOT-jar-with-dependencies.jar
+```
+
+- Explain what the application does in the background.
+    - Note that to be able see the object and the S3 bucket, we should comment the lines 142 and 150.
+
+
+>### mvn install
+
+- Run the command below to install our own package into .m2 folder.
+
+```bash
+mvn install
+```
+
+- Go into ```~/.m2/repository``` folder and show where our package is installed.
+
+
+>### mvn site
+
+- Add two more plugins to run the command ```mvn site```
+
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-site-plugin</artifactId>
+    <version>3.7.1</version>
+</plugin>
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-project-info-reports-plugin</artifactId>
+    <version>3.0.0</version>
+</plugin>
+```
+
+- Run the command below.
+
+```bash
+mvn clean site
+```
+
+- Show the output ```site``` directory under target directory.
+
+- Run the command below to install Apache Server.
+
+```bash
+sudo yum install -y httpd
+sudo systemctl start httpd
+sudo systemctl enable httpd
+```
+
+- Run the command below to copy the contents of the site folder under ```/var/www/html``` folder.
+
+```bash
+sudo cp -a site/. /var/www/html
+```
+
+
+
+
+
+
+
+
