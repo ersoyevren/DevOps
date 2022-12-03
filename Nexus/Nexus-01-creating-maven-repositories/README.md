@@ -214,3 +214,93 @@ nano pom.xml
 </project>
 ```
 
+## Part 3 : Create Maven Proxy Repository
+
+- Open Nexus Repository Manager UI
+
+- Create a repo called `maven-proxy-hands-on`.
+
+- Click the setting button after that `Repositories`. Then click `Create repository` and choose recipe: `maven2 (proxy)`.
+
+- Name: `maven-proxy-hands-on`
+
+- Remote storage URL:  `https://repo1.maven.org/maven2`
+
+- Click Create repository to complete the form.
+
+- Nexus searchs for settings.xml in the `/home/ec2-user/.m2` directory. .m2 directory is created after running the first mvn command.
+
+```
+mvn
+curl http://169.254.169.254/latest/meta-data/public-ipv4
+nano /home/ec2-user/.m2/settings.xml
+```
+52.90.127.112
+- Your settings.xml file should look like this (Don't forget to change the URL of your repository and the password): 3.89.163.211
+
+```
+<settings>
+  <mirrors>
+    <mirror>
+      <!--This sends everything else to /public -->
+      <id>nexus</id>
+      <mirrorOf>*</mirrorOf>
+      <url>http://<AWS public DNS:8081/repository/maven-proxy-hands-on/</url>
+    </mirror>
+  </mirrors>
+  <profiles>
+    <profile>
+      <id>nexus</id>
+      <!--Enable snapshots for the built in central repo to direct -->
+      <!--all requests to nexus via the mirror -->
+      <repositories>
+        <repository>
+          <id>central</id>
+          <url>http://central</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </repository>
+      </repositories>
+     <pluginRepositories>
+        <pluginRepository>
+          <id>central</id>
+          <url>http://central</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+<activeProfiles>
+    <!--make the profile active all the time -->
+    <activeProfile>nexus</activeProfile>
+  </activeProfiles>
+  <servers>
+    <server>
+      <id>nexus</id>
+      <username>admin</username>
+      <password>your-password</password> 
+    </server>
+  </servers>
+</settings>
+```
+
+## Part 4 : Create New Components from Maven Central to the Proxy
+
+- Run the build with the command `mvn package`. Your build is ready when you see a BUILD SUCCESS message.
+
+```
+pwd && ls
+mvn package
+ls
+cd target && ls
+```
+
+- Click Browse button in the main toolbar of Nexus to see the list of repositories.
+
+- Click `Browse` from the left-side menu.
+
+- Click `maven-proxy-hands-on`. You’ll see the components you built in the previous exercise.
+
+- Click on the component name to review its details.
+
