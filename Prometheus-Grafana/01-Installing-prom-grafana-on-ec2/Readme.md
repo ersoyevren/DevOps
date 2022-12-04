@@ -202,3 +202,68 @@ scrape_configs:
 | node_filesystem_avail_bytes   | The filesystem space available to non-root users (in bytes)              |
 | rate(node_network_receive_bytes_total[1m])   | The average network traffic received, per second, over the last minute (in bytes)           |
 
+## Part 3 - Install, configure, and use a simple Grafana instance
+	
+- Download and install Grafana from this page. https://grafana.com/grafana/download
+
+- Select `Red Hat, CentOS, RHEL, and Fedora(64 Bit)` part.
+
+```bash
+wget https://dl.grafana.com/enterprise/release/grafana-enterprise-9.1.5-1.x86_64.rpm
+sudo yum install grafana-enterprise-9.1.5-1.x86_64.rpm -y
+sudo systemctl start grafana-server.service
+```
+
+- By default, Grafana will be listening on http://localhost:3000. The default login is "admin" / "admin".
+	
+- Open http://< public ip>:3000 and login as "admin" / "admin".
+
+### Creating a Prometheus data source
+
+- Click on the "cogwheel" in the sidebar to open the Configuration menu.
+
+- Click on "Data Sources".
+
+- Click on "Add data source".
+
+- Select "Prometheus" as the type.
+
+- Set the appropriate Prometheus server URL (for example, http://localhost:9090/)
+
+- Adjust other data source settings as desired (for example, choosing the right Access method).
+
+- Click "Save & Test" to save the new data source.
+
+### Creating a Prometheus graph
+
+- Click the graph title, then click "Edit".
+
+- Under the "Metrics" tab, select your Prometheus data source (bottom right).
+
+- Enter any Prometheus expression into the "Query" field, while using the "Metric" field to lookup metrics via autocompletion.
+
+- To format the legend names of time series, use the "Legend format" input. For example, to show only the method and status labels of a returned query result, separated by a dash, you could use the legend format string {{method}} - {{status}}.
+
+- Tune other graph settings until you have a working graph.
+
+### Importing pre-built dashboards from Grafana.com
+
+- Grafana.com maintains [a collection of shared dashboards](https://grafana.com/grafana/dashboards/) which can be downloaded and used with standalone instances of Grafana. Type `node exporter` to search part and select a `node exporter dashboard`. And, click the `Copy ID to Clipboard`.
+ 
+- On your grafana web UI (http://<public ip>:3000)
+
+  - Click Dashboards button.
+
+  - Select import
+
+  - Paste the `id of the dashboard` (eg. 12486) to `Import via grafana.com` part and click `load`.
+
+- Monitor the dashboard.
+
+# Resources:
+
+- https://prometheus.io/docs/prometheus/latest/getting_started/
+
+- https://prometheus.io/docs/guides/node-exporter/
+
+- https://prometheus.io/docs/visualization/grafana/#importing-pre-built-dashboards-from-grafana-com
