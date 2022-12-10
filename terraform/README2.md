@@ -35,7 +35,7 @@ terraform {
   required_providers {
     aws = {
       source = "hashicorp/aws"
-      version = "4.8.0"
+      version = "4.22.0"
     }
   }
 }
@@ -43,7 +43,7 @@ terraform {
 resource "aws_instance" "tf-ec2" {
   ami           = "ami-0ed9277fb7eb570c9"
   instance_type = "t2.micro"
-  key_name      = "oliver"    # write your pem file without .pem extension>
+  key_name      = "virginia"    # write your pem file without .pem extension>
   tags = {
     "Name" = "tf-ec2"
   }
@@ -74,6 +74,7 @@ terraform validate
 
 ```bash
 $ terraform validate 
+# syntexteki hatalari gosteriyor.
 
 Error: Argument or block definition required
 

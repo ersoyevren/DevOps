@@ -102,7 +102,7 @@ $ aws configure
 
 ### Create a role in IAM management console.
 
-# ec2 muza gorev yaptirabilmemiz icin rol tanimliyoruz. bunu aws configure ve cli ile de yapabilirdik. fakat en guvenilir yolu budur.
+# ec2 muza gorev yaptirabilmemiz icin policiler ile rol tanimliyoruz. bunu aws configure ve cli ile de yapabilirdik. fakat en guvenilir yolu budur.
 - Secure way to make API calls is to create a role and assume it. It gives temporary credentials for access your account and makes API calls.
 
 - Go to the IAM service, click "roles" in the navigation panel on the left then click "create role". 
@@ -147,11 +147,11 @@ provider "aws" {
   ## profile = "my-profile"
 }
 
-resource "aws_instance" "tf-ec2" {
-  ami           = "ami-0c02fb55956c7d316"
+resource "aws_instance" "terra-ec2" {
+  ami           = "ami-0b0dcb5067f052a63"
   instance_type = "t2.micro"
   tags = {
-    "Name" = "created-by-tf"
+    "Name" = "ilk"
   }
 }
 ```
@@ -408,7 +408,7 @@ terraform apply -auto-approve
 ```bash
 terraform plan -out=justs3
 # planda bir degisiklik yaptim bunu burada justs3 adli
-# dosyanin altina yazdirabiliyorum. daha sonra apply ile bu dosyayi calistirabiliirim ama cok kullanilmiyor.
+# dosyanin altina yazdirabiliyorum. daha sonra terraform apply justs3 ile bu dosyayi calistirabilirim ama cok kullanilmiyor.
 ```
 - Now we have just an S3 bucket in justs3. Check that `terraform.tfstate` file has both ec2 and s3 bucket (real infrastructure). If we apply justs3 file it will delete the EC2 instance and modify the tfstate file. You can save your plans with -out flag. First, you can uncomment the EC2 instance.
 
