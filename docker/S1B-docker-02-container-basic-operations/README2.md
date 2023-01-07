@@ -43,31 +43,31 @@ sudo systemctl status docker
 - Run either `docker` or `docker help` to see the help docs about docker commands.
 
 ```bash
-docker help | less
+docker help | less  # burada docker management ve command ler hakkinda bilgiler var.
 ```
 
 - Run `docker COMMAND --help` to see more information about specific command.
 
 ```bash
-docker run --help | less
+docker run --help | less  # docker komutu create ve start ayni anda yapar. ayrica pull da yapmis olur. 
 ```
 
 - Download and run `ubuntu` os with interactive shell open.
 
 ```bash
-docker run -i -t ubuntu
+docker run -i -t ubuntu   # -i demek interaktif olarak bulundugum containerin icinde calissin. -t olucasacak containerin terminalinde calismak istiyorum. 
 ```
 
 - Display the os name on the container for the current user.
 
 ```bash
-cat /etc/os-release
+cat /etc/os-release # isletim sisteminin bilgilerine erisebiliruz.
 ```
 
 - Display the shell name on the container for the current user.
 
 ```bash
-echo $0
+echo $0   # hangi terminali kullandigini gorebiliriz.
 ```
 
 - Update and upgrade os packages on `ubuntu` container.
@@ -87,13 +87,13 @@ apt-get update && apt-get upgrade -y
   - Try to edit `myfile.txt` file with `vim` editor and show that there is no `vim` installed.
 
     ```bash
-    vim myfile.txt
+    vim myfile.txt # containerin icinde bu komut calismaz. cunku ubuntunun bu versiyonunda vim kurulu degil
     ```
 
   - Install `vim` editor.
 
     ```bash
-    apt-get install vim
+    apt-get install vim  # simdi bu containera vim i install ediyorum.
     ```
 
   - Edit `myfile.txt` file with `vim` editor and type `Hello from the Ubuntu Container` to show that `vim` command can be run now.
@@ -105,13 +105,13 @@ apt-get update && apt-get upgrade -y
 - Exit the `ubuntu` container and return to ec2-user bash shell.
 
 ```bash
-exit
+exit # oldugum containerdan ciktim.
 ```
 
 - Show the list of all containers available on Docker machine and explain container properties.
 
 ```bash
-docker ps -a
+docker ps -a   # docker ps komutu ile var olan containerlar docker ps -a ile stopta bulunan containerlari gorebiliyoruz.
 ```
 
 - Run the second `ubuntu` os with interactive shell open and name container as `clarus` and show that this `ubuntu` container is different from the previous one.
@@ -129,13 +129,13 @@ exit
 - Show the list of all containers again and explain the second `ubuntu` containers' properties and how the names of containers are given.
 
 ```bash
-docker ps -a
+docker ps -a  # docker container ls ve docker container ls -a da docker ps ve docker ps -a nin islevlerini yapar.
 ```
 
 - Restart the first container by its `ID`.
 
 ```bash
-docker start 4e6
+docker start 4e6 # stopta var olan containeri calistiriyor. docker start names le de calistirir.
 ```
 
 - Show only running containers and explain the status.
@@ -147,7 +147,7 @@ docker ps
 - Stop the first container by its `ID` and show it is stopped.
 
 ```bash
-docker stop 4e6 && docker ps -a
+docker stop 4e6 && docker ps -a # calismakta olan containeri durdurabilyorum.
 ```
 
 - Restart the `clarus` container by its name and list only running containers.
@@ -159,7 +159,7 @@ docker start clarus && docker ps
 - Connect to the interactive shell of running `clarus` container and `exit` afterwards.
 
 ```bash
-docker attach clarus
+docker attach clarus # calismakta olan containerin icine beni bagliyor.
 ```
 
 - Show that `clarus` container has stopped by listing all containers.
@@ -183,7 +183,8 @@ docker inspect clarus | less
 - Delete the first container using its `ID`.
 
 ```bash
-docker rm 4e6
+docker rm 4e6 # bu sekilde containeri silebiliyorum. 
+docker rmi 4e6  # eger images silmek istiyorsam  bu sekilde siliyorum.
 ```
 
 - Delete the second container using its name.

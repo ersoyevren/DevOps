@@ -65,13 +65,13 @@ sudo systemctl status docker
 - Add the `ec2-user` to the `docker` group to run docker commands without using `sudo`.
 
 ```bash
-sudo usermod -a -G docker ec2-user
+sudo usermod -a -G docker ec2-user  # ec2-useri docker grubuna eklemem lazim. bunu yapmasaydim her docker komutunun basina sudo koymam gerekiyordu.
 ```
 
 - Normally, the user needs to re-login into bash shell for the group `docker` to be effective, but `newgrp` command can be used activate `docker` group for `ec2-user`, not to re-login into bash shell.
 
 ```bash
-newgrp docker
+newgrp docker  #yukarida girdigimiz komutu active ediyor.
 ```
 
 - Check the docker version without `sudo`.
@@ -111,7 +111,7 @@ Server:
 - Check the docker info without `sudo`.
 
 ```bash
-docker info
+docker info  # sistem hakkindaki bilgileri aliyoruz.
 
 Client:
  Debug Mode: false
