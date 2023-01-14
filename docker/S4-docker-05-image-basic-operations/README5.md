@@ -81,13 +81,13 @@ docker image ls
 - Run `ubuntu` as container with interactive shell open.
 
 ```bash
-docker run -it ubuntu
+docker run -it ubuntu  # -it burada interaktif oldugu anlamina geliyor.
 ```
 
 - Display the `ubuntu` os info on the container (`VERSION="20.04 LTS (Focal Fossa)"`) and note that the `latest` tag is showing release `20.04` as in the Docker Hub. Then exit the container.
 
 ```bash
-cat /etc/os-release
+cat /etc/os-release  # ubuntunun isletim sistemini ogreniyoruz.
 exit
 ```
 
@@ -102,7 +102,7 @@ docker image ls
 
 ```bash
 # Defaults to ubuntu:latest
-docker image inspect ubuntu
+docker image inspect ubuntu   # detayli bir bilgi veriyor.
 # Ubuntu with tag 18.04
 docker image inspect ubuntu:18.04
 ```
@@ -110,7 +110,7 @@ docker image inspect ubuntu:18.04
 - Search for Docker Images both on `bash` and on Docker Hub. 
   
 ```bash
-docker search ubuntu
+docker search ubuntu #docker hub a gidip arama yaparken gibi getiriyor.
 ```
 
 ## Part 3 - Building Docker Images with Dockerfile
@@ -120,7 +120,7 @@ docker search ubuntu
 - Create a folder to hold all files necessary for creating Docker image.
 
 ```bash
-mkdir clarusway_web
+mkdir clarusway_web  # docker image icin bir dosya olusturuyoruz.
 cd clarusway_web
 ```
 
@@ -146,22 +146,25 @@ RUN apt-get update -y
 RUN apt-get install python3 -y
 RUN apt-get install python3-pip -y
 RUN pip3 install flask
-COPY . /app
-WORKDIR /app
-CMD python3 ./welcome.py
+COPY . /app   
+# source ve destionation kismindan olusur. . daki dosyalari app dosyasina gonderiyor. burada app dosyasi yoksa olusturuyor.
+WORKDIR  /app  
+# app directory ine gidiyor. 
+CMD python3 ./welcome.py 
+# container calistiktan sonra komutu uyguluyor.
 ```
 
 - Build Docker image from Dockerfile locally, tag it as `<Your_Docker_Hub_Account_Name>/<Your_Image_Name>:<Tag>` and explain steps of building. Note that repo name is the combination of `<Your_Docker_Hub_Account_Name>/<Your_Image_Name>`.
 
 ```bash
-docker build -t "clarusway/flask-app:1.0" .
+docker build -t "620bef75a214/flask-app:1.0" . # buradaki nokta ihtiyacimiz olan dependcy leri orada ariyor.
 docker image ls
 ```
 
 - Run the newly built image as container in detached mode, connect host `port 80` to container `port 80`, and name container as `welcome`. Then list running containers and connect to EC2 instance from the browser to show the Flask app is running.
 
 ```bash
-docker run -d --name welcome -p 80:80 clarusway/flask-app:1.0
+docker run -d -p 80:80 620bef75a214/flask-app:1.0
 docker container ls
 ```
 
@@ -174,7 +177,7 @@ docker login
 - Push newly built image to Docker Hub, and show the updated repo on Docker Hub.
 
 ```bash
-docker push clarusway/flask-app:1.0
+docker push 620bef75a214/flask-app:1.0
 ```
 
 - This time, we reduce the size of image.

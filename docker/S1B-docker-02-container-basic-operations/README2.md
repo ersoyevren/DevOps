@@ -111,7 +111,7 @@ exit # oldugum containerdan ciktim.
 - Show the list of all containers available on Docker machine and explain container properties.
 
 ```bash
-docker ps -a   # docker ps komutu ile var olan containerlar docker ps -a ile stopta bulunan containerlari gorebiliyoruz.
+docker ps -a   # docker ps komutu ile var olan containerlar docker ps -a ile stopta bulunan containerlari da gorebiliyoruz.
 ```
 
 - Run the second `ubuntu` os with interactive shell open and name container as `clarus` and show that this `ubuntu` container is different from the previous one.

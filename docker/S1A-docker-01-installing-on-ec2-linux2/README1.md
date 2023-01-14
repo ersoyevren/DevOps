@@ -71,7 +71,7 @@ sudo usermod -a -G docker ec2-user  # ec2-useri docker grubuna eklemem lazim. bu
 - Normally, the user needs to re-login into bash shell for the group `docker` to be effective, but `newgrp` command can be used activate `docker` group for `ec2-user`, not to re-login into bash shell.
 
 ```bash
-newgrp docker  #yukarida girdigimiz komutu active ediyor.
+newgrp docker  #bir once girdigimiz komutu active ediyor.
 ```
 
 - Check the docker version without `sudo`.
